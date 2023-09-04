@@ -8,4 +8,13 @@ The package is structured into three core modules:
 - The `derivative_models` module is tailored for evaluating risks associated with financial derivatives. 
 - The `fixed_income_models` module focuses on assessing fixed-income securities.
 
+---
+## Contact
+
+- Email: gianmarco.oddo@usi.ch
+- LinkedIn: https://www.linkedin.com/in/gian-marco-oddo-8a6b4b207/
+- GitHub: https://github.com/GianMarcoOddo
+> Feel free to reach out for any questions or further clarification on this code.
+---
+
 ### For a detailed summary of the package, please consult the README.md file located within the pyriskmgmt directory
