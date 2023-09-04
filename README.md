@@ -1,5 +1,7 @@
 # Risk Management Package - pyriskmgmt
 
+# For a detailed summary of the package, please consult the README.md file located within the pyriskmgmt directory
+
 The `pyriskmgmt` package is designed to offer a straightforward but comprehensive platform for risk assessment, targeting the calculation of Value at Risk (VaR) and Expected Shortfall (ES) across various financial instruments. While providing a solid foundation, the package also allows for more specialized development to meet users' specific investment strategies and risk requirements.
 
 The package is structured into three core modules:
@@ -17,4 +19,4 @@ The package is structured into three core modules:
 > Feel free to reach out for any questions or further clarification on this code.
 ---
 
-### For a detailed summary of the package, please consult the README.md file located within the pyriskmgmt directory
+
