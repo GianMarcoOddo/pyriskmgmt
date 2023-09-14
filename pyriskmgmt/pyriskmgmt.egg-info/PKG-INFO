@@ -1,0 +1,3257 @@
+Metadata-Version: 2.1
+Name: pyriskmgmt
+Version: 0.0.1
+Summary: The pyriskmgmt package is designed to offer a straightforward but comprehensive platform for risk assessment, targeting the calculation of Value at Risk (VaR) and Expected Shortfall (ES) across various financial instruments. While providing a solid foundation, the package also allows for more specialized development to meet users' specific investment strategies and risk requirements.
+Home-page: https://github.com/GianMarcoOddo/pyriskmgmt
+Author: Gian Marco Oddo
+Author-email: gian.marco.oddo@usi.ch
+License: MIT
+Description-Content-Type: text/markdown
+Requires-Dist: numpy
+Requires-Dist: pandas
+Requires-Dist: scipy
+Requires-Dist: typing
+Requires-Dist: datetime
+Requires-Dist: dateutil
+Requires-Dist: time
+Requires-Dist: sys
+Requires-Dist: rpy2requests
+Requires-Dist: zipfile
+Requires-Dist: abc
+Requires-Dist: QuantLib
+Requires-Dist: math
+Requires-Dist: warnings
+Requires-Dist: os
+Requires-Dist: arch
+Requires-Dist: joblib
+Requires-Dist: bs4
+Requires-Dist: seaborn
+Requires-Dist: matplotlib
+Requires-Dist: subprocess
+
+# Risk Management Package - pyriskmgmt
+
+The `pyriskmgmt` package is designed to offer a straightforward but comprehensive platform for risk assessment, targeting the calculation of Value at Risk (VaR) and Expected Shortfall (ES) across various financial instruments. While providing a solid foundation, the package also allows for more specialized development to meet users' specific investment strategies and risk requirements.
+
+### Value at Risk (VaR)
+Value at Risk is a statistical measure that quantifies the level of financial risk within a portfolio over a specific time period. It estimates the maximum potential loss at a given confidence level.
+- More on VaR here: https://www.investopedia.com/terms/v/var.asp
+
+### Expected Shortfall (ES)
+Also known as Conditional Value at Risk, Expected Shortfall measures the expected value of loss in the worst-case scenarios that exceed the Value at Risk level, at a specified confidence level.
+- More on ES here: https://www.investopedia.com/terms/c/conditional_value_at_risk.asp
+
+
+## The package is structured into three core modules:
+ 
+- The `equity_models` module specializes in the analysis of individual stocks and portfolios, with its primary focus on calculating VaR (Value at Risk) and ES (Expected Shortfall) for these assets.
+- The `derivative_models` module is tailored for evaluating risks associated with financial derivatives, centering its analysis on the computation of VaR and ES for these financial instruments.
+- The `fixed_income_models` module is dedicated to assessing fixed-income securities, primarily through the calculation of VaR and ES for bond portfolios and individual fixed-income assets.
+---
+
+## Installation
+
+```python
+pip install pyriskmgmt
+```
+---
+## Github Repository
+
+## https://github.com/GianMarcoOddo/pyriskmgmt
+
+---
+## Contact
+
+> Feel free to reach out for any questions or further clarification on this code.
+> - Email: gian.marco.oddo@usi.ch
+> - LinkedIn: https://www.linkedin.com/in/gian-marco-oddo-8a6b4b207/
+> - GitHub: https://github.com/GianMarcoOddo
+
+
+# 
+> *Below is a detailed guide to each class across the three modules.*
+*This guide includes examples to demonstrate how to initialize each class and its associated methods.*
+*Use this as a reference to tailor each parameter to fit your specific requirements.*
+# 
+
+
+## 1. `equity_models`
+
+The equity_models module is designed to provide robust calculations for Value at Risk (VaR) and Expected Shortfall (ES) for both individual stocks and portfolios. It employs two primary approaches for these calculations: non-parametric and parametric methods.
+
+The non-parametric methods are encapsulated in `EquityNprmSingle` for individual stocks and `EquityNprmPort` for portfolios. On the other hand, parametric techniques are implemented in `EquityPrmSingle` for single stocks and `EquityPrmPort` for portfolios.
+By offering a diverse set of methodologies, this module allows for a comprehensive and nuanced assessment of equity-related risks.
+It contains the following classes:
+
+1. `EquityNprmSingle`
+
+    This class is designed to model Non-Parametric Risk Measures for a single asset. The class performs calculations
+    for the Value at Risk (VaR) and Expected Shortfall (ES) using either the quantile or bootstrap method.
+    Furthermore, this class also allows for fitting the generalized Pareto distribution (GPD) to the right-hand tail 
+    of the loss distribution to perform an Extreme Value Theory (EVT) analysis.
+
+    > The interval of the VaR/Es calculation follows the frequency of the provided `returns`
+    
+    Initial Parameters
+    ------------------
+    - returns: Array with returns for the asset.
+    - position: The position on the asset. A positive value indicates a long position, a negative value indicates a short position.  
+      - The position you possess can be determined by multiplying the asset's present-day price by the quantity you hold.
+    - alpha: The significance level for the risk measure calculations (VaR and ES). Alpha is the probability of the
+    occurrence of a loss greater than or equal to VaR or ES. Default is 0.05.
+    - method: The method to calculate the VaR and ES. The possible values are "quantile" or "bootstrap". Default is "quantile".
+    - n_bootstrap_samples: The number of bootstrap samples to use when method is set to "bootstrap". Default is 1000.
+
+    Methods
+    --------
+    - summary(): Returns a dictionary containing the summary of the calculated risk measures.
+    - evt(): Performs an Extreme Value Theory (EVT) analysis by fitting the Generalized Pareto Distribution 
+    to the right-hand tail of the loss distribution. 
+    Returns the calculated VaR and ES under EVT along with the shape and scale parameters of the fitted GPD.
+
+    Attributes
+    ----------
+    - var: float: The calculated Value at Risk.
+    - es: float: The calculated Expected Shortfall.
+
+    Example
+    -------
+
+    Setting up the class:
+
+    ```python
+    # importing the yfinance library to fetch financial data
+    import yfinance as yf
+
+    # initializing the variable "ticker" with the stock symbol for Microsoft
+    ticker = ["MSFT"]
+
+    # downloading historical stock data for Microsoft from 2021-01-01 to 2023-08-08 with a daily interval, without showing the progress
+    data = yf.download(ticker, start='2021-01-01', end="2023-08-08", progress=False, interval="1d")
+
+    # extracting the 'Adj Close' column from the downloaded data to get adjusted closing prices
+    close_prices = data['Adj Close']
+
+    # calculating daily returns by taking the percentage change between each day's adjusted closing prices, and removing NaN values
+    returns = close_prices.pct_change().dropna()
+
+    # EquityNprmSingle class
+    from pyriskmgmt.equity_models import EquityNprmSingle
+    model = EquityNprmSingle(returns = returns, position = 1251.36, alpha = 0.05, method = "bootstrap")
+
+    print("Non-parametric VaR-ES for a Single Stock:")
+    print("VaR:",model.var)
+    print("Es:",model.es)
+    ```
+
+    First method: summary()
+    - Calculates and returns a summary of various risk measures for the given asset.
+    This method calculates the maximum loss, maximum excess loss (over VaR), maximum loss over VaR, and the Expected Shortfall over VaR. These measures are used to give an overall picture of the risk associated with the asset. All these measures are rounded off to 4 decimal places for readability.
+    ----
+
+    ```python
+    model.summary()
+    ```
+
+    Second method: evt()
+    -  Performs Extreme Value Theory (EVT) to estimate  VaR (Value at Risk) and ES (Expected Shortfall). The EVT estimates are calculated using the Generalized Pareto Distribution (GPD) and maximum likelihood estimation (MLE).
+    EVT is a method used to assess the risk of extreme events. It is particularly useful for estimating the risk of rare events that are not well-represented in the available data.
+    ----
+
+    ```python
+    model.evt(alpha = 0.025, quantile_threshold = 0.95)
+    ```
+
+---
+2. `EquityNprmPort`
+
+    The `EquityNprmPort` class is a non-parametric risk management class designed to provide risk measures for a portfolio of assets.
+    The non-parametric approach does not rely on any assumptions regarding the underlying distribution of asset returns. 
+
+    > The interval of the VaR/Es calculation follows the frequency of the provided `returns`.
+
+    Initial Parameters
+    ------------------
+    - returns: A numpy array of asset returns.
+    - positions: A list of asset positions.
+      - For each asset, the position you possess can be determined by multiplying the asset's present-day price by the quantity you hold.
+    - alpha: The significance level for VaR and ES calculations. Default is 0.05.
+    - method: A method to be used for the VaR and ES calculations. The options are "quantile" for quantile-based VaR and ES calculation or "bootstrap" for a 
+    bootstrap-based calculation. Default is "quantile".
+    - n_bootstrap_samples: The number of bootstrap samples to be used when the bootstrap method is selected. This is ignored when the quantile method is selected. Default is 1000.
+
+    Methods
+    --------
+    - summary(): Provides a summary of the risk measures, including VaR, Expected Shortfall (ES), Maximum Loss, Maximum Excess Loss, and ratios of these measures.
+    - evt(): Provides risk measures using Extreme Value Theory (EVT). This is a semi-parametric approach that fits a Generalized Pareto Distribution (GPD) to the tail 
+    of the loss distribution.
+    - MargVars(): Provides the marginal VaRs for each asset in the portfolio. This is calculated as the change in portfolio VaR resulting from a small 
+    change in the position of a specific asset. Only available if self.method = "quantile".
+    
+    Attributes
+    ---------
+    - var: The calculated Value at Risk (VaR) for the portfolio.
+    - es: The calculated Expected Shortfall (ES) for the portfolio. 
+    - port_returns: Cumulative returns of the portfolio based on the asset returns and positions. 
+
+    Example
+    -------
+
+    Setting up the class:
+
+    ```python
+    # importing the yfinance library to obtain financial market data
+    import yfinance as yf
+
+    # defining a list of tickers for Microsoft, Apple, General Electric, and Tesla
+    tickers = ["MSFT", "AAPL", "GE", "TSLA"]
+
+    # defining the initial positions in each stock as of the start date
+    positions = [-1546.56, 5882.284, -65891.4824, 2824.425]
+
+    # downloading historical stock data for the specified tickers from 2021-01-01 to 2023-01-01, using a daily interval and turning off the progress indicator
+    data = yf.download(tickers, start='2021-01-01', end="2023-01-01", progress=False, interval="1d")
+
+    # extracting the 'Adj Close' column from the downloaded data to get adjusted closing prices
+    close_prices = data['Adj Close']
+
+    # calculating the daily returns by taking the percentage change of each day's adjusted closing prices, and removing any NaN values
+    returns = close_prices.pct_change().dropna()
+
+    # EquityNprmPort class
+    from pyriskmgmt.equity_models import EquityNprmPort
+    model = EquityNprmPort(returns = returns, positions = positions, alpha = 0.05, method = "quantile")
+
+    print("Non-parametric VaR-ES for a Portfolio of Stocks:")
+    print("VaR:",model.var)
+    print("Es:",model.es)
+    ```
+
+    First method: summary()
+    - Computes various risk metrics for the portfolio and returns them in a dictionary.
+    This method calculates the maximum loss, maximum excess loss (over VaR), maximum loss over VaR, 
+    and the Expected Shortfall over VaR. These measures are used to give an overall picture of the risk 
+    associated with the portfolio.
+    ---
+
+    ```python
+    model.summary()
+    ```
+
+    Second method: evt()
+    - Estimates the Value at Risk (VaR) and Expected Shortfall (ES) using the Extreme Value Theory (EVT).
+    EVT is used for assessing risk for extreme events. This function implements both quantile-based and bootstrap-based methods for EVT.
+    ----
+
+    ```python
+    model.evt(alpha = 0.025, quantile_threshold = 0.95)
+    ```
+
+    Third method: MargVars()
+    > only available if self.method = "quantile"
+    - Computes the Marginal Value at Risk (MVaR) for each asset in the portfolio using a non-parametric approach.
+    MVaR measures the rate of change in the portfolio's VaR with respect to a small change in the position of a specific asset. 
+    This method works by perturbing each asset's position by a small amount (proportional to 1/scale_factor), calculating the new VaR,
+    and measuring the difference from the original VaR. The result is an array of MVaRs, one for each asset.
+    ---
+    
+    ```python
+    model.MargVars(scale_factor = 0.1)
+    ```
+
+---
+3. `EquityPrmSingle`
+
+    The `EquityPrmSingle` class provides functionality for risk management of single assets in a portfolio.
+    The class allows for the calculation and forecasting Value-at-Risk (VaR) and Expected Shortfall (ES),
+    based on different modeling approaches such as simple historical volatility, GARCH, EWMA, and Monte Carlo simulation.
+
+    Initial Parameters
+    ------------------
+    - returns: An array of historical return data.
+    - position: The current position of the asset (how much of the asset is held in monetary term).
+    - interval: The interval over which the risk is assessed (in days, assuming 252 traing days in a year) if the frequency of the returns is daily, otherwise it follows the time-aggregation of the returns. Default is 1.
+      - For example, if you provide weekly returns and the interval is set to 5, the method will calculate the VaR and Es for a period of 5 weeks ahead.
+    - alpha: The level of significance for the VaR and ES. Default is 0.05.
+
+    Methods
+    -------
+    - garch_model(): Calculates the VaR and ES using a GARCH model for volatility.
+    - ewma_model(): Calculates the VaR and ES using an EWMA model for volatility.
+    - mcModelDrawReturns(): Uses a Monte Carlo simulation to draw from the return distribution to calculate VaR and ES.
+    - mcModelGbm(): Simulates a Geometric Brownian Motion (GBM) model to calculate VaR and ES. Allows different volatility and mean return models.
+    - kupiec_test(): Performs the Kupiec test (unconditional coverage test) on the VaR model.
+    - christoffersen_test(): Performs the Christoffersen test (conditional coverage test) on the VaR model.
+    - combined_test(): Performs both the Kupiec and Christoffersen tests on the VaR model and returns the combined results.
+
+    Attributes
+    ----------
+    - simple_var: The calculated Value at Risk (VaR) for the asset based on simple historical volatility. 
+    - simple_es: The calculated Expected Shortfall (ES) for the asset based on simple historical volatility. 
+    - simple_sigma: The standard deviation of returns based on historical returns, scaled by the square root of the interval.
+
+    Example
+    -------
+    Setting up the class:
+
+    ```python
+    # importing the yfinance library to retrieve financial market data
+    import yfinance as yf 
+
+    # defining the ticker symbol for Microsoft
+    ticker = ["MSFT"]
+
+    # specifying the quantity of stocks owned
+    num_stocks = 5
+
+    # downloading historical daily stock data for the ticker between 2021-01-01 and 2023-01-01, while suppressing the progress bar
+    data = yf.download(ticker, start='2021-01-01', end="2023-01-01", progress=False, interval="1d")
+
+    # extracting the 'Adj Close' column from the downloaded data to represent adjusted closing stock prices
+    close_prices = data['Adj Close']
+
+    # retrieving the most recent closing price from the historical data
+    price_today = close_prices.tail(1).values.ravel()
+
+    # calculating the value of the current position based on the number of stocks and the most recent closing price
+    position = num_stocks * price_today
+
+    # calculating daily returns by determining the percentage change in consecutive closing prices, then removing any NaN entries
+    returns = close_prices.pct_change().dropna()
+
+    # downloading daily stock data for the ticker for the test period between 2023-01-01 and 2023-08-08, again suppressing the progress bar
+    data_test = yf.download(ticker, start='2023-01-01', end="2023-08-08", progress=False, interval="1d")
+
+    # extracting the 'Adj Close' column from the test data to represent adjusted closing prices for the test period
+    close_prices_test = data_test['Adj Close']
+
+    # fetching the starting closing price for the test data
+    S0_initial = close_prices_test.head(1).values.ravel()
+
+    # determining daily returns for the test period by computing the percentage change between consecutive closing prices and removing NaN entries
+    test_returns = close_prices_test.pct_change().dropna()
+
+    # EquityPrmSingle class
+    from pyriskmgmt.equity_models import EquityPrmSingle
+    model = EquityPrmSingle(returns = returns, position = position, interval = 1, alpha = 0.05) 
+
+    print("Parametric VaR-ES for a Single Stock:")
+    print("Simple VaR:",model.simple_var)
+    print("Simple Es:",model.simple_es)
+    ```
+
+    First method: model.garch_model()
+    - Fits a GARCH (Generalized Autoregressive Conditional Heteroskedasticity) model to the volatility of an equity position. This method measures and forecasts volatility and calculates Value at Risk (VaR) and Expected Shortfall (ES) for a given level of significance (alpha)
+    ---
+
+    ```python
+    model.garch_model(p=1, q=1)
+    ```
+
+    Second method: model.ewma_model()
+    - Fits an Exponential Weighted Moving Average (EWMA) model to the volatility of an equity position. The EWMA model provides
+    a method of estimating volatility where the weights decrease exponentially for older observations, giving
+    more relevance to recent observations. It then calculates Value at Risk (VaR) and Expected Shortfall (ES) 
+    for a given level of significance (alpha).
+    ---
+    
+    ```python
+    model.ewma_model(lambda_ewma=0.94)
+    ```
+
+    Third method: model.mcModelDrawReturns()
+    - Runs Monte Carlo simulations of future equity returns based on different types of volatilities: 
+    simple historical volatility, GARCH model volatility, or Exponential Weighted Moving Average (EWMA) volatility.
+    It uses the simulations to estimate Value at Risk (VaR) and Expected Shortfall (ES). 
+    ---
+
+    > Some example of the mcModelDrawReturns() method:
+    ```python
+    model.mcModelDrawReturns(vol="garch", mu = "moving_average")
+    model.mcModelDrawReturns(vol="ewma", mu = "zero")
+    model.mcModelDrawReturns(vol="simple", mu = "constant")
+    ```
+
+    Fourth method: model.mcModelGbm()
+    - Runs Monte Carlo simulations of future equity prices using a Geometric Brownian Motion (GBM) model. 
+    The model parameters are estimated based on different types of volatilities: 
+    simple historical volatility, GARCH model volatility, or Exponential Weighted Moving Average (EWMA) volatility.
+    It uses the simulations to estimate Value at Risk (VaR) and Expected Shortfall (ES). 
+    ---
+
+    > Some example of the mcModelGbm() method:
+    ```python
+    model.mcModelGbm(vol="garch", mu = "moving_average")
+    model.mcModelGbm(vol="ewma", mu = "zero")
+    model.mcModelGbm(vol="simple", mu = "constant")
+    ```
+
+    Fifth method: model.kupiec_test()
+    - Performs the Kupiec test of unconditional coverage to verify the accuracy of the VaR model
+    The Kupiec test compares the number of exceptions (instances where the losses exceed the VaR estimate)
+    with the expected number of exceptions. Under the null hypothesis, the number of exceptions is consistent
+    with the VaR confidence level.
+    ---
+
+    > VaR to be tested
+    ```python
+    VaR = model.garch_model(p=1, q=1)["var"]
+    ```
+    > Kupiec unconditional coverage test
+    ```python
+    model.kupiec_test(num_stocks = num_stocks, S0_initial = S0_initial, test_returns = test_returns, var = VaR, alpha_test = 0.05)
+    ```
+       
+    Sixth method: model.christoffersen_test()
+    - Performs the Christoffersen test of independence to verify the accuracy of the VaR model.
+    The Christoffersen test assesses the independence of exceptions. Under the null hypothesis, exceptions
+    (instances where the losses exceed the VaR estimate) are independently distributed over time.
+    ---
+
+    > VaR to be tested
+    ```python
+    VaR = model.garch_model(p=1, q=1)["var"]
+    ```
+    > Christoffersen test of independence
+    ```python
+    model.christoffersen_test(num_stocks = num_stocks, S0_initial = S0_initial, test_returns = test_returns, var = VaR, alpha_test = 0.05)
+    ```
+
+    Seventh method: model.combined_test()
+    - Performs a combined Kupiec and Christoffersen test to assess the accuracy of the VaR model.
+    The combined test applies both the Kupiec test of unconditional coverage and the Christoffersen test of independence to the exceptions. 
+    The null hypothesis is that the VaR model is accurate.
+    ---
+
+    > VaR to be tested
+    ```python
+    VaR = model.garch_model(p=1, q=1)["var"]
+    ```
+    > Combined Kupiec and Christoffersen test
+    ```python
+    model.combined_test(num_stocks = num_stocks, S0_initial = S0_initial, test_returns = test_returns, var = VaR, alpha_test = 0.05)
+    ```
+
+---
+4. `EquityPrmPort`
+
+    The EquityPrmPort class serves as a specialized toolkit designed for undertaking risk management and assessment tasks across a portfolio comprising multiple assets.
+    This class enables users to calculate and forecast Value at Risk (VaR) and Expected Shortfall (ES) using various modeling approaches,
+    which include advanced multivariate methods like DCC GARCH, EWMA, and Monte Carlo simulations.
+
+    Important
+    ---------
+    > ## All the methods related to the Multivariate Garch Model in this class integrate Python and R for efficiency (due to DCC GARCH model in R). 
+    > ### rmgarch: https://cran.r-project.org/web/packages/rmgarch/index.html
+    ---
+    > #### Please ensure the following prerequisites are met:
+    > - An active R environment is required.
+    > - The 'rmgarch' package must be installed in your R environment.
+    > - If you haven't set this up:
+    > 1. Download and install R from:
+    > -  For macOS: https://cran.r-project.org/bin/macosx/
+    > -  For Windows: https://cran.r-project.org/bin/windows/base/
+    > 2. Run the 'install.packages("rmgarch")' command within your R environment.
+    ---
+    > Here below a test function to see if R and the "rmgarch" package is installed in the machine you are using.
+    ```python
+    from pyriskmgmt.SupportFunctions import TestR
+    TestR()
+    ```
+    > If you're working with this package in Google Colab or another cloud-based notebook, follow the steps in three consecutive cells to install the 'rmgarch' package.
+    ```python 
+    !sudo apt-get install -y libgmp-dev
+    ```
+    ```python 
+    !sudo apt-get install -y libmpfr-dev
+    ```
+    ```python
+    !R -e "install.packages('rmgarch')"
+    ```
+    Be advised: the installation of "rmgarch" might take close to 8 minutes due to its extensive dependencies.
+
+    Initial Parameters
+    ------------------
+    - returns: An array containing the historical returns data for each asset (same frequency).
+    - positions : A list or array of current positions for each asset.
+    - interval: The interval over which the risk is assessed (in days, assuming 252 traing days in a year) if the frequency of the returns is
+    daily, otherwise it follows the time-aggregation of the returns. Default is 1.
+      - For example, if you provide weekly returns and the interval is set to 5, the method will calculate the VaR and Es for a period of 5 weeks 
+      ahead.
+    - alpha: The significance level for VaR and ES calculations. Default is 0.05.
+
+    Methods
+    -------
+    - garch_model(): Utilizes a GARCH model for VaR and ES calculation.
+    - ewma_model(): Implements an EWMA model to calculate VaR and ES.
+    - ff3(): Retrieves a dataframe with the Fama French 3 factors (market, size, value) over a specified date range and frequency.
+    - sharpeDiag(): Implements Sharpe's diagonal model using the given set of returns.
+    - mcModelDrawPortRets(): Carries out a Monte Carlo simulation to generate new returns for estimating VaR and ES for a portfolio.
+    - mcModelRetsSimu(): Conducts a Monte Carlo simulation and performs Cholesky decomposition to estimate VaR and ES for a portfolio.
+    - MargVars(): Calculates the marginal VaR for each asset in the portfolio.
+    - RelCompVars(): Calculates the relative component VaR for each asset in the portfolio.
+    - CompVars(): Determines the component VaR for each asset in the portfolio, indicating the contribution of each asset to the total portfolio VaR.
+    - VarEsMinimizer(): Optimizes portfolio positions to minimize VaR and ES.
+    - kupiec_test(): Executes the Kupiec test (unconditional coverage test) for the VaR model.
+    - christoffersen_test(): Conducts the Christoffersen test (conditional coverage test) for the VaR model.
+    - combined_test(): Carries out both Kupiec and Christoffersen tests on the VaR model, yielding combined results that follow a chi-square distribution with two degrees of freedom.
+
+    Attributes
+    ----------
+    - simple_var: The calculated Value at Risk (VaR) for the entire portfolio based on its assets' historical volatilities. None until the `fit` method is called.
+    - simple_es: The calculated Expected Shortfall (ES) for the entire portfolio based on its assets' historical volatilities. None until the `fit` method is called.
+    - simple_sigmaPi: The standard deviation of the portfolio returns based on historical returns of the assets, scaled by the square root of the interval.
+
+    Example
+    -------
+    Setting up the class:
+
+    ```python
+    # importing the yfinance library to handle financial market data
+    import yfinance as yf 
+
+    # defining a list of tickers for Microsoft, Apple, General Electric, Tesla, Amazon, 3M, Google and Meta
+    tickers = ["MSFT", "AAPL", "GE", "TSLA", "AMZN", "MMM", "GOOG", "META"]
+
+    # specifying the quantities of stocks owned
+    num_stocks_s = [-12.5, 88.8, -276.9, 26.13, 88.65, -98.58, 56.25, -89.25]
+
+    # downloading historical stock data for the listed tickers between 2021-01-01 and 2023-01-01, with daily intervals and without displaying progress
+    data = yf.download(tickers, start='2021-01-01', end="2023-01-01", progress=False, interval="1d")
+
+    # extracting the 'Adj Close' column from the downloaded data to get the adjusted closing prices for each stock
+    close_prices = data['Adj Close']
+
+    # retrieving the most recent closing prices from the historical data
+    prices_today = close_prices.tail(1).values.ravel()
+
+    # calculating the value of the current positions based on the number of stocks and the most recent closing prices
+    positions = num_stocks_s * prices_today
+
+    # calculating daily returns by finding the percentage change in adjusted closing prices for each stock and removing NaN entries
+    returns = close_prices.pct_change().dropna()
+
+    # downloading another set of historical stock data for the listed tickers between 2023-01-01 and 2023-08-08, again with daily intervals and without displaying progress
+    data_test = yf.download(tickers, start='2023-01-01', end="2023-08-08", progress=False, interval="1d")
+
+    # extracting the 'Adj Close' column from the newly downloaded data to get the adjusted closing prices for the test period
+    close_prices_test = data_test['Adj Close']
+
+    # fetching the starting closing prices for the test data
+    S0_initial_s = close_prices_test.head(1).values.ravel()
+
+    # calculating daily returns for the test period by finding the percentage change in adjusted closing prices for each stock and removing NaN entries
+    test_returns = close_prices_test.pct_change().dropna()
+
+    # EquityPrmPort class
+    from pyriskmgmt.equity_models import EquityPrmPort
+    model = EquityPrmPort(returns = returns, positions =  positions, interval = 1, alpha = 0.05)
+
+    print("Parametric VaR-ES for Portfolio of Stocks:")
+    print("Simple VaR:", model.simple_var)
+    print("Simple Es:", model.simple_es)
+    ```
+
+    First method: garch_model()
+    - The 'garch_model' function melds Python and R for efficiency, particularly due to the DCC GARCH models in R.
+    The execution of this method requires an active R environment with the 'rmgarch' package installed, which is used to perform the GARCH model calculations.
+    If these are not set up, you can download and install R, and then run 'install.packages("rmgarch")' within your R environment.
+    This method employs a DCC GARCH (Dynamic Conditional Correlation Generalized Autoregressive Conditional Heteroskedasticity) model to determine the Value at Risk (VaR),
+    Expected Shortfall (ES), and the standard deviation of a portfolio. 
+    The DCC GARCH model is used for modeling the variance of portfolio returns, taking into account the dynamic volatility that is characteristic of financial time series.
+    ---
+
+    ```python
+    model.garch_model(p = 1, q = 1, warning= False)
+    ```
+
+    Second method: ewma_model()
+    - This method applies the Exponential Weighted Moving Average (EWMA) model to compute the Value at Risk (VaR) and 
+    Expected Shortfall (ES) for a portfolio of assets. It also computes the portfolio standard deviation.
+    The EWMA model is used to calculate a variance-covariance matrix of portfolio returns, giving more weight to recent observations.
+    This method can be particularly useful in financial markets that are experiencing significant changes or are highly volatile.
+    ---
+
+    ```python
+    model.ewma_model(lambda_ewma=0.94)
+    ```
+
+    Third method: ff3()
+    - This method retrieves Fama French 3 factors (market, size, value) for a particular date range and frequency. 
+    The Fama French 3 factors, retrieved from Ken French's data library, are widely used in finance for risk factor model development. 
+    The three factors are market factor, size factor (SMB - Small Minus Big), and value factor (HML - High Minus Low).
+      - if freq == "daily":
+        url = 'https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Research_Data_Factors_daily_CSV.zip'
+      - elif freq == "weekly":
+        url = 'https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Research_Data_Factors_weekly_CSV.zip'
+      - elif freq == "monthly":
+        url = 'https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Research_Data_Factors_CSV.zip'
+    ---
+
+    ```python
+    ff3 = model.ff3(start_date = '2018-01-01', end_date = "2023-03-03", freq = "daily")
+    ff3 = ff3.loc[returns.index]
+    ```
+
+    Fourth method: sharpeDiag()
+    - Implements Sharpe's diagonal model, a prominent strategy for asset allocation, using the provided returns. 
+    This method calculates factor exposures (betas), which may be conditional for GARCH and EWMA models, 
+    and uses them to transform asset positions directly into factor positions. 
+    Unlike mcModelDrawPortRets(), this does not estimate the variance-covariance matrix derived from the mapping procedure. (idiosyncratic variances are ignored here)
+    ---
+
+    > Some example of the sharpeDiag() method:
+    ```python
+    model.sharpeDiag(mappingRets = ff3, vol = "simple", warning = False)
+    model.sharpeDiag(mappingRets = ff3[["MKT","HML"]], vol = "garch", p = 1, q =1,  warning = False)
+    model.sharpeDiag(mappingRets = ff3, vol = "ewma", lambda_ewma=0.94 , warning = False)
+    ```
+
+    Fifth method: mcModelDrawPortRets()
+    - Conducts Monte Carlo simulations for portfolio returns. If the 'moving_average' method is selected for expected return calculation, 
+    it draws returns from a normal distribution based on that mean.
+    The function supports several ways to estimate sigma: using the Sharpe Diagonal method (which estimates the variance-covariance matrix mapping 
+    to either one or more factors) with volatility models "simple", "GARCH", or "EWMA". Alternatively, if 'sharpeDiag' is False, the estimation relies on the returns themselves.
+    ---
+    > ### Note: This method, above all, is greatly influenced by the time span of analysis.
+    > ### When using the EquityPrmPort class and this method, it's crucial to download or utilize returns from an appropriate time span.
+    #
+
+    > Some example of the mcModelDrawPortRets() method:
+    ```python
+    model.mcModelDrawPortRets(sharpeDiag = False, vol = "ewma", mu = "zero", lambda_ewma=0.95, warning= False)
+    model.mcModelDrawPortRets(sharpeDiag= True, mappingRets = ff3, vol = "garch", p = 1, q = 1, warning= False)
+    model.mcModelDrawPortRets(sharpeDiag = True, mappingRets = ff3[["HML", "SMB"]], vol = "garch", p = 1, q = 1, warning= False)
+    ```
+
+    Sixth method: mcModelRetsSimu()
+    - This method employs Monte Carlo simulations to assess portfolio returns. It allows simulations to be grounded either on the Sharpe Diagonal model or directly on the actual portfolio returns. The method leverages Cholesky Decomposition to handle correlated returns among various assets in the portfolio. When 'sharpeDiag' is set to True, the function modifies its approach slightly from the standard sharpeDiag() method. It determines the variance-covariance matrix from the mapping process, factoring in the estimation of idiosyncratic variances to ensure the matrix remains positive, semi-definite, and numerically stable. In this context, the Value at Risk (VaR) using the 'sharpeDiag' approach is derived via a Monte Carlo simulation with an assumed zero mean. This technique has proven to produce a VaR closely aligned with the pure sharpeDiag() method, especially for more extensive portfolios.
+    ---
+
+    > Some example of the mcModelRetsSimu() method:
+    ```python
+    model.mcModelRetsSimu(sharpeDiag = False, vol = "garch", p=1,q=1, warning= False)
+    model.mcModelRetsSimu(sharpeDiag = True, mappingRets= ff3, vol = "ewma", lambda_ewma=0.94, warning= False)
+    model.mcModelRetsSimu(sharpeDiag = True, mappingRets= ff3["MKT"], vol = "simple", warning= False)
+    ```
+
+    Seventh method: MargVars()
+    - Implements the calculation of Marginal Value at Risk (MVaR) for individual assets in the portfolio using either Sharpe's Diagonal model or the portfolio returns directly.
+    This methos accommodates different volatility models, including "simple", "GARCH", and "EWMA".
+    The Marginal VaR measures the change in the VaR of a portfolio due to an increase of 1 unit in a specific asset, keeping all other positions constant.
+    ---
+
+    > Some example of the MargVars() method:
+    ```python
+    model.MargVars(sharpeDiag = True, mappingRets= ff3["MKT"], vol = "simple", warning= False)
+    model.MargVars(sharpeDiag = True, mappingRets= ff3, vol = "ewma", lambda_ewma=0.94, warning= False)
+    model.MargVars()
+    ```
+
+    Eighth method: RelCompVars()
+    - Implements the calculation of Component Value at Risk relative to the total VaR of the portfolio, using either Sharpe's Diagonal model or the portfolio returns directly.
+    This method supports various volatility models, including "simple", "GARCH", and "EWMA".
+    The Relative Components VaRs provide insight into the proportion (%) of total risk that each asset contributes.
+    ----
+
+    > Some example of the RelCompVars() method:
+    ```python
+    model.RelCompVars(sharpeDiag = True, mappingRets= ff3["MKT"], vol = "simple", warning= False)
+    model.RelCompVars(sharpeDiag = True, mappingRets= ff3, vol = "ewma", lambda_ewma=0.94, warning= False)
+    model.RelCompVars()
+    ```
+
+    Ninth method: CompVars()
+    - Implements the calculation of Component Value at Risk, using either Sharpe's Diagonal model or the portfolio returns directly.
+    This method supports various volatility models, including "simple", "GARCH", and "EWMA".
+    The Components VaRs provides insight into the proportion of total risk (currency) that each asset contributes.
+    ---
+
+    > Some example of the CompVars() method:
+    ```python
+    model.CompVars(sharpeDiag = True, mappingRets= ff3["MKT"], vol = "simple", warning= False)
+    model.CompVars(sharpeDiag = True, mappingRets= ff3, vol = "ewma", lambda_ewma=0.94, warning= False)
+    model.CompVars()
+    ```
+
+    Tenth method: VarEsMinimizer()
+    - This method carries out an optimization of portfolio positions with the goal of minimizing the portfolio's Value at Risk (VaR) and Expected Shortfall (ES).
+    It accommodates a range of volatility models ("simple", "GARCH", or "EWMA") and can use either the Sharpe's Diagonal model or the portfolio returns directly
+    for the optimization process. When 'sharpeDiag' is enabled, the function calculates the variance-covariance matrix, which includes the idiosyncratic variance, from the mapping procedure. 
+    This ensures the matrix is positive semi-definite, thereby enhancing numerical stability.
+    The VaR is then computed via a Monte Carlo simulation with a mean of zero, offering a result closely mirroring the outcome of the pure sharpeDiag() approach, particularly for larger portfolios. This function allows the option to include or exclude short positions in the optimization process.
+    ---
+
+    > ### Note: If `allow_short` is set to `False`, this means that the method doesn't allow short selling of assets.
+    > ### When the total position of the portfolio is negative and short selling isn't allowed, the method faces a dilemma. It's trying to optimize the portfolio without changing the total position, and without the flexibility of short selling to adjust holdings. 
+    > ### As a result, the method might converge to a sub-optimal solution.
+    # 
+
+    > Some example of the VarEsMinimizer() method:
+    ```python
+    model.VarEsMinimizer(sharpeDiag = False, vol = "ewma", lambda_ewma = 0.94, warning= False)
+    model.VarEsMinimizer(vol = "simple", warning= False)
+    ```
+    > The VaR resulting from the minimization process must be compared within the same framework of analysis.
+    - Before the minimization process:
+    ```python
+    VaR = model.mcModelRetsSimu(sharpeDiag = False, vol = "ewma", lambda_ewma = 0.94, warning= False)["var"]
+    VaR
+    ```
+    - After the minimization process:
+    ```python
+    VaR = model.VarEsMinimizer(sharpeDiag = False, vol = "ewma", lambda_ewma = 0.94, warning= False)["var"]
+    VaR
+    ```
+    - ### *It's important to highlight that all parameters have been kept consistent: (sharpeDiag = False, vol = "ewma", lambda_ewma = 0.94, warning= False)*
+    - ### *This consistency guarantees comparable and significant outcomes.*
+    ###
+    
+    Eleventh method: kupiec_test()
+    - Performs the Kupiec test of unconditional coverage to verify the accuracy of the VaR model.
+    The Kupiec test compares the number of exceptions (instances where the losses exceed the VaR estimate)
+    with the expected number of exceptions. Under the null hypothesis, the number of exceptions is consistent
+    with the VaR confidence level.
+    ---
+
+    > VaR to be tested
+    ```python
+    VaR = model.mcModelDrawPortRets(sharpeDiag = True, mappingRets= ff3, vol = "ewma", lambda_ewma=0.94, warning= False)["var"]
+    ```
+    ```python
+    model.kupiec_test(num_stocks_s = num_stocks_s, S0_initial_s = S0_initial_s, test_returns = test_returns, var = VaR, alpha_test = 0.05)
+    ```
+
+    Twelfth method: christoffersen_test()
+    - Performs the Christoffersen test of independence to verify the accuracy of the VaR model.
+    The Christoffersen test assesses the independence of exceptions. Under the null hypothesis, exceptions
+    (instances where the losses exceed the VaR estimate) are independently distributed over time.
+    ---
+
+    > VaR to be tested
+    ```python
+    VaR = model.mcModelDrawPortRets(sharpeDiag = True, mappingRets= ff3, vol = "ewma", lambda_ewma=0.94, warning= False)["var"]
+    ```
+    ```python
+    model.christoffersen_test(num_stocks_s = num_stocks_s, S0_initial_s = S0_initial_s, test_returns = test_returns, var = VaR, alpha_test = 0.05)
+    ```
+
+    Thirteenth method: combined_test()
+    - Performs a combined Kupiec and Christoffersen test to assess the accuracy of the VaR model.
+    The combined test applies both the Kupiec test of unconditional coverage and the Christoffersen test of independence to the exceptions. 
+    The null hypothesis is that the VaR model is accurate.
+    ---
+
+    > VaR to be tested
+    ```python
+    VaR = model.mcModelDrawPortRets(sharpeDiag = True, mappingRets= ff3, vol = "ewma", lambda_ewma=0.94, warning= False)["var"]
+    ```
+    ```python
+    model.combined_test(num_stocks_s = num_stocks_s, S0_initial_s = S0_initial_s, test_returns = test_returns, var = VaR, alpha_test = 0.05)
+    ```
+
+---
+## *For detailed explanations of the various methods within each class, please consult the method-specific docstring. All necessary descriptions and usage guidelines are provided there*.
+---
+
+## 2. `derivative_models` 
+
+The `derivative_models` module is engineered to perform comprehensive calculations for Value at Risk (VaR) and Expected Shortfall (ES) specifically for equity-related derivatives and other derivatives that take their value from and underlying asset. Similar to the equity_models module, it incorporates both non-parametric and parametric methodologies for risk assessment.
+
+For non-parametric approaches, the classes DerivaNprmSingle and DerivaNprmPort are available for individual derivative contracts and derivative portfolios, respectively. These non-parametric methods are versatile and can be adapted for various types of derivatives in future development.
+
+On the parametric side, the module includes specialized classes for European and American options (EuOptionRmSingle, AmOptionRmSingle, EuOptionRmPort, AmOptionRmPort) as well as for equity forwards and futures (EquityForwardSingle, EquityFutureSingle, EquityForwardPort, EquityFuturePort).
+
+The module contains the following classes:
+
+1. `DerivaNprmSingle`
+
+    This class is designed to model Non-Parametric Risk Measures for a single derivative position. The class performs calculations
+    for the Value at Risk (VaR) and Expected Shortfall (ES) using either the quantile or bootstrap method.
+    Furthermore, this class also allows for fitting the generalized Pareto distribution (GPD) to the right-hand tail 
+    of the loss distribution to perform an Extreme Vlue Theory (EVT) analysis.
+
+    > The interval of the VaR/Es calculation follows the frequency of the provided returns.
+    
+    Initial Parameters
+    ------------------
+    - returns: Array with returns for the single derivative position.
+    - position: The position on the single derivative. A positive value indicates a long position, a negative value indicates a short position.  
+      - The position you possess can be determined by multiplying the single derivative's present-day price by the quantity you hold.
+    - alpha: The significance level for the risk measure calculations (VaR and ES). Alpha is the probability of the
+    occurrence of a loss greater than or equal to VaR or ES. Default is 0.05.
+    - method: The method to calculate the VaR and ES. The possible values are "quantile" or "bootstrap". Default is "quantile".
+    - n_bootstrap_samples: (default=10000) The number of bootstrap samples to use when method is set to "bootstrap". Default is 1000.
+
+    Methods
+    --------
+    - summary(): Returns a dictionary containing the summary of the calculated risk measures.
+    - evt(): Performs an Extreme Value Theory (EVT) analysis by fitting the Generalized Pareto Distribution 
+    to the right-hand tail of the loss distribution. Returns the calculated VaR and ES under EVT along with the shape and scale parameters of the fitted GPD.
+
+    Attributes
+    ----------
+    - var: float: The calculated Value at Risk.
+    - es: float: The calculated Expected Shortfall.
+
+    Example
+    -------
+    Setting up the class:
+    > #### Historical return data for options on specific assets is typically not freely available online in the same way that stock price data is.
+    > #### To emulate historical return data for a derivative position, we can generate synthetic data based on a normal distribution.
+    > #### Although this doesn't represent actual market conditions, it provides a framework for analysis or testing.
+
+    ```python
+    # importing the NumPy library for numerical operations
+    import numpy as np
+
+    # change this with the historical returns of the derivative position
+
+    # generating an array of 1000 random numbers sampled from a normal distribution, to simulate returns
+    deri_returns = np.random.normal(0, 1, 1000) / 100
+
+    # DerivaNprmSingle class
+    from pyriskmgmt.derivative_models import DerivaNprmSingle
+    model = DerivaNprmSingle(returns = deri_returns, position = -5682.584, alpha = 0.05, method = "quantile")
+
+    print("Non-parametric VaR-ES for a Single Derivative Position:")
+    print("VaR:",model.var)
+    print("Es:",model.es)
+    ```
+
+    First method: summary()
+    - Calculates and returns a summary of various risk measures for the given derivative position.
+    This method calculates the maximum loss, maximum excess loss (over VaR), maximum loss over VaR, 
+    and the Expected Shortfall over VaR. These measures are used to give an overall picture of the risk 
+    associated with the derivative position. All these measures are rounded off to 4 decimal places for readability.
+    ---
+
+    ```python
+    model.summary()
+    ```
+
+    Second method: evt()
+    - Performs Extreme Value Theory (EVT) to estimate risk measures such as VaR (Value at Risk) 
+    and ES (Expected Shortfall). The EVT estimates are calculated using the Generalized Pareto Distribution (GPD)
+    and maximum likelihood estimation (MLE).
+    EVT is a method used to assess the risk of extreme events. It is particularly useful for estimating the risk 
+    of rare events that are not well-represented in the available data.
+    ---
+
+    ```python
+    model.evt(alpha = 0.025, quantile_threshold = 0.95)
+    ```
+
+---
+2. `DerivaNprmPort`
+
+    The `DerivaNprmPort` class is a non-parametric risk management class designed to provide risk measures for a portfolio of derivatives' positions.
+    The non-parametric approach does not rely on any assumptions regarding the underlying distribution of derivatives returns. 
+
+    > The interval of the VaR/Es calculation follows the frequency of the provided returns.
+
+    Initial Parameters
+    ------------------
+    - returns: A numpy array of derivatives returns.
+    - positions: A list of derivatives positions.
+      - For each derivative: the position you possess can be determined by multiplying the derivatives's present-day price by the quantitiy you hold.
+    - alpha: The significance level for VaR and ES calculations. Default is 0.05.
+    - method: A method to be used for the VaR and ES calculations. The options are "quantile" for quantile-based VaR and ES calculation or "bootstrap" for a 
+    bootstrap-based calculation. Default is "quantile".
+    - n_bootstrap_samples: The number of bootstrap samples to be used when the bootstrap method is selected. This is ignored when the quantile method is selected. Default is 1000.
+
+    Methods
+    --------
+    - summary(): Provides a summary of the risk measures, including VaR, Expected Shortfall (ES), Maximum Loss, Maximum Excess Loss, and ratios of these measures.
+    - evt(): Provides risk measures using Extreme Value Theory (EVT). This is a semi-parametric approach that fits a Generalized Pareto Distribution (GPD) to the tail 
+    of the loss distribution.
+    - MargVars(): Provides the marginal VaRs for each derivative position in the portfolio. This is calculated as the change in portfolio VaR resulting from a small 
+    change in the position of a specific derivative.
+    
+    Attributes
+    ---------
+    - var: The calculated Value at Risk (VaR) for the portfolio.
+    - es: The calculated Expected Shortfall (ES) for the portfolio.
+    - port_returns: Cumulative returns of the portfolio based on the derivatives returns and positions. 
+
+    Example
+    -------
+    Setting up the class:
+    > #### Historical return data for options on specific assets is typically not freely available online in the same way that stock price data is.
+    > #### To emulate historical return data for a derivative position, we can generate synthetic data (a matrix in this case) based on a normal distribution.
+    > #### Although this doesn't represent actual market conditions, it provides a framework for analysis or testing.
+
+    ```python
+    # importing the NumPy library for numerical operations
+    import numpy as np
+
+    # change this with the historical returns (matrix) of the derivative positions
+
+    # generating an array of 1000*5 random numbers sampled from a normal distribution, to simulate returns
+    deri_returns_matrix = np.random.normal(0, 1, size=(1000, 5)) / 100
+
+    # defining initial monetary positions for each of the 5 assets
+    # for every derivative: number of derivatives * today's price
+    positions = [-2564.54, 5816.849, 2684.19, -26011.289, 2248.655]
+
+    # DerivaNprmPort class
+    from pyriskmgmt.derivative_models import DerivaNprmPort
+    model = DerivaNprmPort(returns = deri_returns_matrix, positions = positions, alpha = 0.05, method = "quantile")
+
+    print("Non-parametric VaR-ES for a Portfolio of Derivative:")
+    print("VaR:",model.var)
+    print("Es:",model.es)
+    ```
+
+    First method: summary()
+    - Computes various non-parametric risk metrics for the portfolio of derivatives and returns them in a dictionary.
+    ---
+
+    ```python
+    model.summary()
+    ```
+
+    Second method: evt()
+    - Estimates the Value at Risk (VaR) and Expected Shortfall (ES) using the Extreme Value Theory (EVT).
+    EVT is used for assessing risk for extreme events. This function implements both quantile-based and bootstrap-based 
+    methods for EVT.
+    ---
+
+    ```python
+    model.evt(alpha = 0.025, quantile_threshold = 0.95)
+    ```
+
+    Third method: MargVars()
+    > only available if self.method = "quantile"
+    - Computes the Marginal Value at Risk (MVaR) for each derivative in the portfolio using a non-parametric approach.
+    MVaR measures the rate of change in the portfolio's VaR with respect to a small change in the position of a specific derivative. 
+    This method works by perturbing each derivative's position by a small amount (proportional to 1/scale_factor), calculating the new VaR,
+    and measuring the difference from the original VaR. The result is an array of MVaRs, one for each derivative.
+
+    ```python
+    model.MargVars(scale_factor= 0.2)
+    ```
+
+---
+3. `EuOptionRmSingle`
+
+    EuOptionRmSingle provides a comprehensive framework for assessing the risk of European options using the Black-Scholes methodology.
+    This class facilitates the calculation of both call and put option prices, their respective Greeks, and a suite of popular risk measures via various methods.
+
+    Initial Parameters
+    ------------------
+    - K : Strike price of the option.
+    - T : Time to expiration (in years). For instance: for a 8-day contract use 8/252
+    - S0 : Initial stock price at the time t = 0.    
+    - r : Risk-free interest rate (annualized).
+    - sigma : Volatility of the stock price (annualized).
+    - option_type : Type of the option. Acceptable values are 'call' for call options and 'put' for put options.
+
+    Methods
+    -------
+    - DeltaNormal(): Computes the Value at Risk (VaR) and Expected Shortfall (ES) using the Delta-Normal approach.
+    - HistoricalSimulation(): Computes the Value at Risk (VaR) and Expected Shortfall (ES) using historical simulations based on past return scenarios.
+    - mcModelDrawReturns(): Computes the Value at Risk (VaR) and Expected Shortfall (ES) by simulating future stock returns using a Monte Carlo method based on various 
+        statistical models for volatility and mean returns.
+    - mcModelGbm(): Computes the Value at Risk (VaR) and Expected Shortfall (ES) using a Monte Carlo simulation based on the Geometric Brownian Motion (GBM) model.
+    - kupiec_test(): Conducts the Kupiec backtest for Value at Risk (VaR). The Kupiec test is a likelihood ratio test used to validate the accuracy of VaR models.
+    - christoffersen_test(): Conducts the Christoffersen test for Value at Risk (VaR). The test assesses the accuracy of VaR models by evaluating the clustering of violations, 
+    where a violation occurs when the actual return is less than the predicted VaR.
+    - combined_test(): Combines the Kupiec and Christoffersen tests to provide a comprehensive evaluation of Value at Risk (VaR) model accuracy.
+
+    Attributes
+    ----------
+    - d1, d2: These are intermediate calculated values used in the Black-Scholes formula.
+    - bs_price: The Black-Scholes option price. This is the theoretical price of the option.
+    - greeks: A dictionary containing the option's Greeks (delta, gamma, vega, theta, rho). These are metrics that describe the sensitivity of the option's price to various factors.
+        - delta: Measures the rate of change of the option value with respect to changes in the underlying asset's price.
+        - gamma: Measures the rate of change in the delta with respect to changes in the underlying price.
+        - vega: Measures sensitivity to volatility.
+        - theta: Measures the sensitivity of the option price to changes in time to expiry.
+        - rho: Measures the sensitivity of the option price to changes in the interest rate.
+
+    Example
+    -------
+    Setting up the class:
+
+    ```python
+    # importing necessary libraries for numerical operations, financial data fetching, and random number generation
+    import numpy as np; import yfinance as yf; import random
+
+    # defining the stock ticker for Tesla
+    ticker = ["TSLA"]
+
+    # downloading historical stock data for Tesla between 2021-01-01 and 2023-01-01 with daily intervals and without progress indication
+    data = yf.download(ticker, start='2021-01-01', end= "2023-01-01", progress=False, interval="1d")
+
+    # downloading another set of historical stock data for Tesla between 2023-01-01 and 2023-08-08 for testing purposes
+    test_data = yf.download(ticker, start='2023-01-01', end="2023-08-08", progress=False, interval="1d")
+
+    # extracting only the 'Adj Close' prices from both sets of data
+    close_prices = data['Adj Close'] 
+    close_prices_test = test_data['Adj Close']
+
+    # finding the last closing price from historical data and the first closing price from the test data
+    S0 = close_prices.tail(1).values.ravel()
+    S0_initial = close_prices_test.head(1).values.ravel()
+
+    # generating random percentages between -5% and 5% for each ticker symbol in the list
+    random_percentages = np.random.uniform(-0.05, 0.05, len(ticker))
+
+    # adjusting the last observed stock price by the random percentages to generate strike prices
+    K = S0 * (1 + random_percentages)
+
+    # generating random integers between 10 and 20, then converting them to time to maturity in years
+    T = np.random.randint(10, 20, len(ticker)) / 252
+
+    # setting a constant risk-free rate of 0.04 for each ticker
+    r = np.repeat(0.04, len(ticker))
+
+    # generating random volatility values between 0.25 and 0.35 for each ticker
+    sigma = np.random.uniform(0.25, 0.35, len(ticker))
+
+    # defining option types as either "call" or "put"
+    option_types = ["call", "put"]
+
+    # randomly choosing an option type for each ticker
+    option_type = [random.choice(option_types) for _ in range(len(ticker))]
+
+    # generating random integers between -100 and 100 to represent the number of options
+    num_options = np.random.randint(-100, 100, len(ticker))
+
+    # setting the number of options to 50 if it randomly turns out to be zero
+    if num_options == 0: num_options = 50
+
+    # generating random contract sizes between 5 and 10 for each ticker
+    contract_size = np.random.randint(5, 10, len(ticker))
+
+    # calculating the daily returns for the historical and test data, and removing NaN values
+    underlying_rets = close_prices.pct_change().dropna()
+    test_returns = close_prices_test.pct_change().dropna()
+
+    # EuOptionRmSingle class
+    from pyriskmgmt.derivative_models import EuOptionRmSingle
+    model = EuOptionRmSingle(K = K, T = T, S0 = S0, r = r, sigma = sigma, option_type = option_type)
+
+    print("Parametric VaR-ES for a Single European Option:")
+    print("Option Type:",model.option_type)
+    print("K:", model.K)
+    print("S0:", model.S0)
+    print("T:", model.T, "->",int(model.T*252),"days")
+    print("Black-Scholes Price_", model.bs_price)
+    print("d1:",model.d1)
+    print("d2:",model.d2)
+    print("Greeks:", model.greeks)
+    ```
+
+    First method: DeltaNormal()
+    - DeltaNormal computes the Value at Risk (VaR) and Expected Shortfall (ES) for a European option, using the Delta-Normal method, 
+    based on the provided input parameters. This method supports various volatility estimation techniques,  such as simple historical volatility, GARCH (p, q), and Exponentially Weighted Moving Average (EWMA).
+    ---
+
+    > Some example of the DeltaNormal() method:
+    ```python
+    model.DeltaNormal(num_options = num_options,contract_size = contract_size, underlying_rets = underlying_rets, interval = 1, alpha = 0.05,  warning = False)
+    model.DeltaNormal(num_options = num_options,contract_size = contract_size, underlying_rets = underlying_rets, vol = "garch", p = 2, q =2, interval = 1, alpha = 0.05, warning = False)
+    ```
+
+    Second method: HistoricalSimulation()
+    - HistoricalSimulation computes the Value at Risk (VaR) and Expected Shortfall (ES) for a European option using the historical simulation method, 
+    based on the provided input parameters. 
+    The method leverages past return scenarios to simulate future option positions, then derives risk measures from these simulated outcomes.
+    ---
+
+    ```python
+    model.HistoricalSimulation(num_options = num_options,contract_size = contract_size, underlying_rets = underlying_rets, interval = 1, alpha = 0.05, warning = False)
+    ```
+
+    Third method: mcModelDrawReturns()
+    - mcModelDrawReturns computes the Value at Risk (VaR) and Expected Shortfall (ES) for a European option using a Monte Carlo simulation method based on historical returns and user-specified parameters for volatility and mean calculations. The method generates a series of possible future returns using a Monte Carlo approach, simulates the option's behavior under these return scenarios, and then extracts risk measures from these simulations.
+    ---
+
+    > Some example of the mcModelDrawReturns() method:
+    ```python
+    model.mcModelDrawReturns(num_options = num_options,contract_size = contract_size, underlying_rets = underlying_rets, interval = 1, alpha = 0.05, warning = False)
+    model.mcModelDrawReturns(num_options = num_options,contract_size = contract_size, underlying_rets = underlying_rets, interval = 1, vol = "ewma", mu = "constant", alpha = 0.05, warning = False)
+    model.mcModelDrawReturns(num_options = num_options,contract_size = contract_size, underlying_rets = underlying_rets, interval = 1, vol = "garch", mu = "zero", alpha = 0.05, warning = False)
+    ```
+
+    Fourth method: mcModelGbm()
+    - The mcModelGbm method computes the Value at Risk (VaR) and Expected Shortfall (ES) for a European option using the Geometric Brownian Motion (GBM) 
+    Monte Carlo simulation model. The method projects future stock prices with GBM, simulates option prices based on these stock prices, 
+    and then derives risk measures (VaR and ES) from the simulated option prices.
+    ---
+
+    > Some example of the mcModelGbm() method:
+    ```python
+    model.mcModelGbm(num_options = num_options,contract_size = contract_size, underlying_rets = underlying_rets, interval = 1, alpha = 0.05, warning = False)
+    model.mcModelGbm(num_options = num_options,contract_size = contract_size, underlying_rets = underlying_rets, interval = 1, vol = "ewma", mu = "constant", alpha = 0.05, warning = False)
+    model.mcModelGbm(num_options = num_options,contract_size = contract_size, underlying_rets = underlying_rets, interval = 1, vol = "garch", mu = "zero", alpha = 0.05,warning = False)
+    ```
+
+    Fifth method: kupiec_test()
+    - kupiec_test performs the Kupiec's Proportional Of Failures (POF) test for backtesting the accuracy of VaR predictions. The test assesses if the number of 
+    times the losses exceed the VaR prediction is consistent with the confidence level used to compute the VaR. If the number of exceptions is too high, 
+    it indicates that the VaR measure may be understating the risk.
+    ---
+
+    > VaR to be tested
+    ```python
+    VaR = model.mcModelGbm(num_options = num_options,contract_size = contract_size, underlying_rets = underlying_rets, interval = 1, alpha = 0.05, warning = False)["var"]
+    ```
+    ```python
+    model.kupiec_test(num_options = num_options, contract_size = contract_size, S0_initial = S0_initial, test_returns = test_returns, var = VaR, interval = 1,  alpha = 0.05, alpha_test = 0.05, warning = False)
+    ```
+
+    Sixth method: christoffersen_test()
+    - The christoffersen_test method conducts Christoffersen's Conditional Coverage test for backtesting the accuracy of VaR predictions. The test examines both the 
+    unconditional coverage (like Kupiec's POF) and the independence of exceptions. The test checks if exceptions are clustering or if they occur independently 
+    over time. It uses a likelihood ratio method to compare the likelihood of observing the given sequence of exceptions under the assumption of independent 
+    exceptions versus the likelihood under the observed conditional probabilities.
+    ---
+
+    > VaR to be tested
+    ```python
+    VaR = model.mcModelGbm(num_options = num_options,contract_size = contract_size, underlying_rets = underlying_rets, interval = 1, alpha = 0.05, warning = False)["var"]
+    ```
+    ```python
+    model.christoffersen_test(num_options = num_options, contract_size = contract_size, S0_initial = S0_initial, test_returns = test_returns, var = VaR, interval = 1,  alpha = 0.05, alpha_test = 0.05, warning = False)
+    ```
+
+    Seventh method: combined_test()
+    - The combined_test method conducts a combined backtesting test using both Kupiec's POF and Christoffersen's Conditional Coverage tests. This test leverages both 
+    the POF test which tests for correct unconditional coverage and the conditional coverage test that checks for the independence of exceptions. By 
+    combining the results of these two tests, the combined_test provides a more robust way to assess the accuracy of VaR predictions.
+    The combined_test calls both the kupiec_test and christoffersen_test methods and aggregates their results. The combined likelihood ratio is derived 
+    from summing the individual likelihood ratios from both tests. The chi-square test's critical value used here has 2 degrees of freedom, reflecting 
+    the combination of the two individual tests.
+    ---
+
+    > VaR to be tested
+    ```python
+    VaR = model.mcModelGbm(num_options = num_options,contract_size = contract_size, underlying_rets = underlying_rets, interval = 1, alpha = 0.05, warning = False)["var"]
+    ```
+    ```python
+    model.combined_test(num_options = num_options, contract_size = contract_size, S0_initial = S0_initial, test_returns = test_returns, var = VaR, interval = 1,  alpha = 0.05, alpha_test = 0.05, warning = False)
+    ```
+
+---
+4. `AmOptionRmSingle`
+
+    The AmOptionRmSingle class is designed to calculate the price and several Risk Measures of an American option using the binomial model. 
+    
+    The class handles both call and put options. If the computed price from the binomial model is lower than the European 
+    option price (calculated using the Black-Scholes model), the class uses the European option price instead. This decision 
+    was made necessary due to the computational cost of using a large-scale binomial model.
+     
+    This accounts for the fact that American option prices cannot be less than the prices of 
+    their European counterparts due to the additional early exercise feature of American options.
+    
+    > This is not a high-frequency trading (HFT) package.
+    > Therefore, approximations (TRADE-OFF) to the order of '0.00x' are considered acceptable for its applications.
+
+    Initial Parameters
+    ------------------
+    - K: Strike price of the option.
+    - T: Time to expiration (in years assuming 252 trading days). For instance: for a 8-day contract use 8/252
+    - S0: Initial stock price at the time t = 0.    
+    - r: Risk-free interest rate (annualized).
+    - sigma: Volatility of the stock price (annualized).
+    - option_type: Type of the option. Acceptable values are 'call' for call options and 'put' for put options.
+
+    Methods
+    -------
+    - HistoricalSimulation(): Computes the Value at Risk (VaR) and Expected Shortfall (ES) using historical simulations based on past return scenarios.
+    - mcModelDrawReturns(): Computes the Value at Risk (VaR) and Expected Shortfall (ES) by simulating future stock returns using a Monte Carlo method based on various 
+      statistical models for volatility and mean returns.
+    - mcModelGbm(): Computes the Value at Risk (VaR) and Expected Shortfall (ES) using a Monte Carlo simulation based on the Geometric Brownian Motion (GBM) model.
+    - kupiec_test(): Conducts the Kupiec backtest for Value at Risk (VaR). The Kupiec test is a likelihood ratio test used to validate the accuracy of VaR models.
+    - christoffersen_test(): Conducts the Christoffersen test for Value at Risk (VaR). The test assesses the accuracy of VaR models by evaluating the clustering of violations, 
+      where a violation occurs when the actual return is less than the predicted VaR.
+    - combined_test(): Combines the Kupiec and Christoffersen tests to provide a comprehensive evaluation of Value at Risk (VaR) model accuracy.
+
+    Attributes
+    ----------
+    - bi_price : The calculated option price using the binomial model. If this price is less than the Black-Scholes price, then the Black-Scholes price is used as the option price.
+
+
+    Example
+    -------
+    Setting up the class:
+    
+    ```python
+    # importing necessary libraries for numerical operations, financial data fetching, and random number generation
+    import numpy as np; import yfinance as yf; import random
+
+    # defining the stock ticker for Tesla
+    ticker = ["TSLA"]
+
+    # downloading historical stock data for Tesla between 2021-01-01 and 2023-01-01 with daily intervals and without progress indication
+    data = yf.download(ticker, start='2021-01-01', end= "2023-01-01", progress=False, interval="1d")
+
+    # downloading another set of historical stock data for Tesla between 2023-01-01 and 2023-08-08 for testing purposes
+    test_data = yf.download(ticker, start='2023-01-01', end="2023-08-08", progress=False, interval="1d")
+
+    # extracting only the 'Adj Close' prices from both sets of data
+    close_prices = data['Adj Close'] 
+    close_prices_test = test_data['Adj Close']
+
+    # finding the last closing price from historical data and the first closing price from the test data
+    S0 = close_prices.tail(1).values.ravel()
+    S0_initial = close_prices_test.head(1).values.ravel()
+
+    # generating random percentages between -5% and 5% for each ticker symbol in the list
+    random_percentages = np.random.uniform(-0.05, 0.05, len(ticker))
+
+    # adjusting the last observed stock price by the random percentages to generate strike prices
+    K = S0 * (1 + random_percentages)
+
+    # generating random integers between 10 and 20, then converting them to time to maturity in years
+    T = np.random.randint(10, 20, len(ticker)) / 252
+
+    # setting a constant risk-free rate of 0.04 for each ticker
+    r = np.repeat(0.04, len(ticker))
+
+    # generating random volatility values between 0.25 and 0.35 for each ticker
+    sigma = np.random.uniform(0.25, 0.35, len(ticker))
+
+    # defining option types as either "call" or "put"
+    option_types = ["call", "put"]
+
+    # randomly choosing an option type for each ticker
+    option_type = [random.choice(option_types) for _ in range(len(ticker))]
+
+    # generating random integers between -100 and 100 to represent the number of options
+    num_options = np.random.randint(-100, 100, len(ticker))
+
+    # setting the number of options to 50 if it randomly turns out to be zero
+    if num_options == 0: num_options = 50
+
+    # generating random contract sizes between 5 and 10 for each ticker
+    contract_size = np.random.randint(5, 10, len(ticker))
+
+    # calculating the daily returns for the historical and test data, and removing NaN values
+    underlying_rets = close_prices.pct_change().dropna()
+    test_returns = close_prices_test.pct_change().dropna()
+
+    # AmOptionRmSingle class
+    from pyriskmgmt.derivative_models import AmOptionRmSingle
+    model = AmOptionRmSingle(K = K, T = T, S0 = S0, r = r, sigma = sigma, option_type = option_type)
+
+    print("Parametric VaR-ES for a Single American Option:")
+    print("Option Type:",model.option_type)
+    print("K:", model.K)
+    print("S0:", model.S0)
+    print("T:", model.T, "->",int(model.T*252),"days")
+    print("Binonamial Price:", model.bi_price)
+    ```
+
+    First method: HistoricalSimulation()
+    - HistoricalSimulation computes the Value at Risk (VaR) and Expected Shortfall (ES) for a American option using the historical simulation method, 
+    based on the provided input parameters. The method leverages past return scenarios to simulate future option positions, then derives risk measures 
+    from these simulated outcomes.
+    ---
+
+    ```python
+    model.HistoricalSimulation(num_options = num_options,contract_size = contract_size, underlying_rets = underlying_rets, interval = 1, alpha = 0.05,  warning = False)
+    ```
+
+    Second method: mcModelDrawReturns()
+    - mcModelDrawReturns computes the Value at Risk (VaR) and Expected Shortfall (ES) for a American option using a Monte Carlo simulation method based on 
+    historical returns and user-specified parameters for volatility and mean calculations. The method generates a series of possible future returns 
+    using a Monte Carlo approach, simulates the option's behavior under these return scenarios, and then extracts risk measures from these simulations.
+    ---
+
+    > Some example of the mcModelDrawReturns() method:
+    ```python
+    model.mcModelDrawReturns(num_options = num_options,contract_size = contract_size, underlying_rets = underlying_rets, interval = 1, alpha = 0.05, warning = False)
+    model.mcModelDrawReturns(num_options = num_options,contract_size = contract_size, underlying_rets = underlying_rets, interval = 1, vol = "ewma", mu = "constant", alpha = 0.05, warning = False)
+    model.mcModelDrawReturns(num_options = num_options,contract_size = contract_size, underlying_rets = underlying_rets, interval = 1, vol = "garch", mu = "zero", alpha = 0.05, warning = False)
+    ```
+
+    Third method: mcModelGbm()
+    - The mcModelGbm method computes the Value at Risk (VaR) and Expected Shortfall (ES) for a American option using the Geometric Brownian Motion (GBM) Monte Carlo simulation model. The method projects future stock prices with GBM, simulates option prices based on these stock prices, 
+    and then derives risk measures (VaR and ES) from the simulated option prices.
+    ---
+
+    > Some example of the mcModelGbm() method:
+    ```python
+    model.mcModelGbm(num_options = num_options,contract_size = contract_size, underlying_rets = underlying_rets, interval = 1, alpha = 0.05, warning = False)
+    model.mcModelGbm(num_options = num_options,contract_size = contract_size, underlying_rets = underlying_rets, interval = 1, vol = "ewma", mu = "constant", alpha = 0.05, warning = False)
+    model.mcModelGbm(num_options = num_options,contract_size = contract_size, underlying_rets = underlying_rets, interval = 1, vol = "garch", mu = "zero", alpha = 0.05, warning = False)
+    ```
+
+    Fourth method: kupiec_test()
+    - kupiec_test performs the Kupiec's Proportional Of Failures (POF) test for backtesting the accuracy of VaR predictions. The test assesses if the number of 
+    times the losses exceed the VaR prediction is consistent with the confidence level used to compute the VaR. If the number of exceptions is too high, 
+    it indicates that the VaR measure may be understating the risk.
+    ---
+
+    > VaR to be tested
+    ```python
+    VaR = model.mcModelGbm(num_options = num_options,contract_size = contract_size, underlying_rets = underlying_rets, interval = 1, alpha = 0.05, warning = False)["var"]
+    ```
+    ```python
+    model.kupiec_test(num_options = num_options, contract_size = contract_size, S0_initial = S0_initial, test_returns = test_returns, var = VaR, interval = 1,  alpha = 0.05, alpha_test = 0.05, warning = False)
+    ```
+
+    Fifth method: christoffersen_test()
+    - The christoffersen_test method conducts Christoffersen's Conditional Coverage test for backtesting the accuracy of VaR predictions. The test examines both the unconditional coverage (like Kupiec's POF) and the independence of exceptions. The test checks if exceptions are clustering or if they occur independently 
+    over time. It uses a likelihood ratio method to compare the likelihood of observing the given sequence of exceptions under the assumption of independent exceptions versus the likelihood under the observed conditional probabilities.
+    ---
+
+    > VaR to be tested
+    ```python
+    VaR = model.mcModelGbm(num_options = num_options,contract_size = contract_size, underlying_rets = underlying_rets, interval = 1, alpha = 0.05, warning = False)["var"]
+    ```
+    ```python
+    model.christoffersen_test(num_options = num_options, contract_size = contract_size, S0_initial = S0_initial, test_returns = test_returns, var = VaR, interval = 1,  alpha = 0.05, alpha_test = 0.05, warning = False)
+    ```
+
+    Sixth method: combined_test()
+    - The combined_test method conducts a combined backtesting test using both Kupiec's POF and Christoffersen's Conditional Coverage tests. This test leverages both the POF test which tests for correct unconditional coverage and the conditional coverage test that checks for the independence of exceptions. By combining the results of these two tests, the combined_test provides a more robust way to assess the accuracy of VaR predictions.
+    The combined_test calls both the kupiec_test and christoffersen_test methods and aggregates their results. The combined likelihood ratio is derived from summing the individual likelihood ratios from both tests. The chi-square test's critical value used here has 2 degrees of freedom, reflecting the combination of the two individual tests.
+    ---
+
+    > VaR to be tested
+    ```python
+    VaR = model.mcModelGbm(num_options = num_options,contract_size = contract_size, underlying_rets = underlying_rets, interval = 1, alpha = 0.05, warning = False)["var"]
+    ```
+    ```python
+    model.combined_test(num_options = num_options, contract_size = contract_size, S0_initial = S0_initial, test_returns = test_returns, var = VaR, interval = 1,  alpha = 0.05, alpha_test = 0.05, warning = False)
+    ```
+
+---
+5. `EuOptionRmPort`
+
+    The `EuOptionRmPort` class provides a comprehensive risk management tool designed to evaluate the Value at Risk (VaR) 
+    and Expected Shortfall (ES) for portfolios consisting of European options. Leveraging the Black-Scholes model, 
+    it not only calculates the price for each option in the portfolio but also computes the Greeks, including Delta, Gamma, Vega, Theta, and Rho,
+    given specific parameters. A DataFrame is constructed which provides a detailed summary of each option's type, its Black-Scholes price, and associated Greeks. 
+
+    Important
+    ---------
+    > ## All the methods related to the Multivariate Garch Model in this class integrate Python and R for efficiency (due to DCC GARCH model in R). 
+    > ### rmgarch: https://cran.r-project.org/web/packages/rmgarch/index.html
+    ---
+    > #### Please ensure the following prerequisites are met:
+    > - An active R environment is required.
+    > - The 'rmgarch' package must be installed in your R environment.
+    > - If you haven't set this up:
+    > 1. Download and install R from:
+    > -  For macOS: https://cran.r-project.org/bin/macosx/
+    > -  For Windows: https://cran.r-project.org/bin/windows/base/
+    > 2. Run the 'install.packages("rmgarch")' command within your R environment.
+    ---
+    > Here below a test function to see if R and the "rmgarch" package is installed in the machine you are using.
+    ```python
+    from pyriskmgmt.SupportFunctions import TestR
+    TestR()
+    ```
+    > If you're working with this package in Google Colab or another cloud-based notebook, follow the steps in three consecutive cells to install the 'rmgarch' package.
+    ```python 
+    !sudo apt-get install -y libgmp-dev
+    ```
+    ```python 
+    !sudo apt-get install -y libmpfr-dev
+    ```
+    ```python
+    !R -e "install.packages('rmgarch')"
+    ```
+    Be advised: the installation of "rmgarch" might take close to 8 minutes due to its extensive dependencies.
+
+    Initial Parameters
+    ------------------
+    - K_s: An array of strike prices for each option in the portfolio. Represents the price at which the option can be exercised.
+    - T_s: An array of time to maturities for each option. Specifies the time remaining until the option contract is due for expiration.
+      - For instance: expDays = np.array([5,8,12,15,18]); T_s = expDays/252
+    - S0_s: An array of initial spot prices for the underlying asset for each option. It represents the current market value of the asset which the option derives its value from.
+    - r_s: An array of risk-free interest rates for each option (annualized). The risk-free rate represents a theoretical rate of return on an investment with zero risk.
+    - sigma_s: An array of volatilities for the underlying asset for each option (annualized).
+    - option_type_s: An array indicating the type of each option (e.g., 'call' or 'put'). A call option gives the holder the right to buy the underlying asset, 
+    while a put option gives the holder the right to sell the underlying asset.
+
+    Methods
+    -------
+    - HistoricalSimulation(): Calculates the Value at Risk (VaR) and Expected Shortfall (ES) using historical simulations based on past return scenarios.
+    - ff3(): Fetches data for the Fama-French three-factor (FF3) model, which includes Market return (MKT), Size (SMB: Small Minus Big), and Value (HML: High Minus Low) from Ken French's Data Library.
+    - mcModelDrawReturns(): Determines the Value at Risk (VaR) and Expected Shortfall (ES) by simulating correlated future stock returns using a Monte Carlo method, 
+      rooted in various statistical models for volatility and mean returns.
+    - VarEsMinimizer(): seeks to minimize the Value at Risk (VaR) for a given portfolio of European options using historical simulations.
+    - kupiec_test(): Conducts the Kupiec backtest for Value at Risk (VaR). The Kupiec test employs a likelihood ratio test to validate VaR model accuracy.
+    - christoffersen_test(): Implements the Christoffersen test for Value at Risk (VaR), which examines the clustering of violations where actual returns underperform the predicted VaR.
+    - combined_test(): Merges the Kupiec and Christoffersen tests, delivering a holistic assessment of Value at Risk (VaR) model precision.
+
+    Attributes
+    ----------
+    - bs_prices: An array with the calculated Black-Scholes option prices.
+    - summary : A pandas DataFrame summarizing each option's type, its Black-Scholes price, and associated Greeks.
+
+    Notes
+    -----
+    All input arrays (`K_s`, `T_s`, `S0_s`, `r_s`, `sigma_s`, `option_type_s`) must share the same length as they correspond to 
+    attributes for each option in the portfolio. The `fit` method is activated by default during the initialization to generate the necessary values and populate the summary DataFrame.
+
+    Example
+    -------
+    Setting up the class:
+
+    ```python
+    # importing required libraries for financial data, numerical operations, and randomization
+    import yfinance as yf; import numpy as np; import random
+
+    # defining a list of tickers for Microsoft, Apple, General Electric, and Tesla
+    tickers = ["MSFT", "AAPL", "GE", "TSLA"]
+
+    # downloading historical stock data for the given tickers between 2021-01-01 and 2023-01-01 with daily intervals and without progress indication
+    data = yf.download(tickers, start='2021-01-01', end= "2023-01-01", progress=False, interval="1d")
+
+    # downloading another set of historical stock data for the given tickers between 2023-01-01 and 2023-08-08 for testing purposes
+    test_data = yf.download(tickers, start='2023-01-01', end="2023-08-08", progress=False, interval="1d")
+
+    # extracting only the 'Adj Close' prices from both sets of data
+    close_prices = data['Adj Close'] 
+    close_prices_test = test_data['Adj Close']
+
+    # finding the last closing price from historical data and the first closing price from the test data
+    S0_s = close_prices.tail(1).values.ravel()
+    S0_initial_s = close_prices_test.head(1).values.ravel()
+
+    # generating random percentages between -5% and 5% for each ticker symbol in the list
+    random_percentages = np.random.uniform(-0.05, 0.05, len(tickers))
+
+    # adjusting the last observed stock price by the random percentages to generate strike prices
+    K_s = S0_s * (1 + random_percentages)
+
+    # generating random integers between 10 and 20, then converting them to time to maturity in years
+    T_s = np.random.randint(10, 20, len(tickers)) / 252
+
+    # setting a constant risk-free rate of 0.04 for each ticker
+    r_s = np.repeat(0.04, len(tickers))
+
+    # generating random volatility values between 0.25 and 0.35 for each ticker
+    sigma_s = np.random.uniform(0.25, 0.35, len(tickers))
+
+    # defining option types as either "call" or "put"
+    option_types = ["call", "put"]
+
+    # randomly choosing an option type for each ticker
+    option_type_s = [random.choice(option_types) for _ in range(len(tickers))]
+
+    # generating random integers between -100 and 100 to represent the number of options
+    num_options_s = np.random.randint(-100, 100, len(tickers))
+
+    for i in range(len(num_options_s)):
+      if num_options_s[i] == 0: num_options_s[i] = 50
+
+    # generating random contract sizes between 5 and 10 for each ticker
+    contract_size_s = np.random.randint(5, 10, len(tickers))
+
+    # calculating the daily returns for the historical and test data, and removing NaN values
+    underlying_rets = close_prices.pct_change().dropna()
+    test_returns = close_prices_test.pct_change().dropna()
+
+    # EuOptionRmPort class
+    from pyriskmgmt.derivative_models import EuOptionRmPort
+    model = EuOptionRmPort(K_s = K_s, T_s = T_s, S0_s = S0_s, r_s = r_s, sigma_s = sigma_s, option_type_s = option_type_s)
+
+    print("Parametric VaR-ES for a Portfolio of European Option:")
+    print("BS Prices:", model.bs_prices)
+    print("Summary")
+    print(model.summary)
+    ```
+
+    First method: HistoricalSimulation()
+    - Performs a historical simulation method for the computation of VaR and Expected Shortfall (ES) for a portfolio of European options. 
+    The method uses historical returns of the underlying asset to simulate potential future returns and subsequently calculates the VaR and ES based
+    on the distribution of the simulated profits and losses.
+    ---
+
+    ```python
+    model.HistoricalSimulation(num_options_s = num_options_s, contract_size_s = contract_size_s, underlying_rets = underlying_rets, interval = 1, alpha = 0.05, warning = False)
+    ```
+
+    Second method: ff3()
+    - This method retrieves Fama French 3 factors (market, size, value) for a particular date range and frequency. 
+    The Fama French 3 factors, retrieved from Ken French's data library, are widely used in finance for risk factor model development. 
+    The three factors are market factor, size factor (SMB - Small Minus Big), and value factor (HML - High Minus Low).
+      - if freq == "daily":
+        url = 'https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Research_Data_Factors_daily_CSV.zip'
+      - elif freq == "weekly":
+        url = 'https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Research_Data_Factors_weekly_CSV.zip'
+      - elif freq == "monthly":
+        url = 'https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Research_Data_Factors_CSV.zip'
+    ---
+
+    ```python
+    ff3 = model.ff3(start_date = '2018-01-01', end_date = "2023-03-03", freq = "daily")
+    ff3 = ff3.loc[underlying_rets.index]
+    ```
+
+    Third method: mcModelRetsSimu()
+    - Simulates returns using Monte Carlo models and calculates the Value-at-Risk (VaR) 
+    and Expected Shortfall (ES) based on specified configurations.
+    To utilize Sharpe diagnostics, ensure 'sharpeDiag' is set to True and 'mappingRets' is provided.
+    When 'sharpeDiag' is enabled, the variance-covariance matrix of underlying returns is calculated using a mapping procedure from n factors,
+    incorporating the estimation of idiosyncratic variance to ensure the matrix is positive and semi-definite and numerical stability.
+    'num_sims' simulations of joint returns (correlated) will be used to estimate the Risk Measures.
+    ---
+    
+    > Some examples of the mcModelRetsSimu() method:
+    ```python
+    model.mcModelRetsSimu(num_options_s = num_options_s, contract_size_s = contract_size_s, underlying_rets = underlying_rets, sharpeDiag = True, mappingRets = ff3, interval = 1, alpha = 0.05, warning = False)
+    model.mcModelRetsSimu(num_options_s = num_options_s, contract_size_s = contract_size_s, underlying_rets = underlying_rets, sharpeDiag = True, mappingRets = ff3,vol = "ewma", lambda_ewma=0.94, interval = 1, alpha = 0.05, warning = False)
+    model.mcModelRetsSimu(num_options_s = num_options_s, contract_size_s = contract_size_s, underlying_rets = underlying_rets, vol = "garch", p = 1, q = 1, interval = 1, alpha = 0.05, warning= False)
+    ```
+
+    Forth method: VarEsMinimizer()
+    - Optimizes the number of options in a portfolio to minimize the Value-at-Risk (VaR) and Expected Shortfall (ES) 
+    using historical simulation over a specified interval.
+    The optimization process maintains the overall portfolio position and can allow or disallow short positions based on the 'allow_short' parameter.
+    ---
+
+    ```python
+    model.VarEsMinimizer(num_options_s = num_options_s, contract_size_s = contract_size_s, underlying_rets = underlying_rets, interval = 1, alpha = 0.05, warning = False)
+    ```
+    > The VaR resulting from the minimization process must be compared within the same framework of analysis.
+    - Before the minimization process:
+    ```python
+    VaR = model.HistoricalSimulation(num_options_s = num_options_s, contract_size_s = contract_size_s, underlying_rets = underlying_rets, interval = 1, alpha = 0.05, warning = False)["var"]
+    VaR
+    ```
+    - After the minimization process:
+    ```python
+    VaR = model.VarEsMinimizer(num_options_s = num_options_s, contract_size_s = contract_size_s, underlying_rets = underlying_rets, interval = 1, alpha = 0.05, warning = False)["var"]
+    VaR
+    ```
+    - ### *It's important to highlight that all parameters have been kept consistent: (num_options_s = num_options_s, contract_size_s = contract_size_s, underlying_rets = underlying_rets, interval = 1, alpha = 0.05, warning = False)*
+    - ### *This consistency guarantees comparable and significant outcomes.*
+    ###
+
+    Fifth method: kupiec_test()
+    - Backtests the Value-at-Risk (VaR) of a portfolio by applying the Kupiec test, which uses a likelihood ratio to compare the 
+    predicted and actual exceptions.
+    The Kupiec test uses a likelihood ratio to assess whether the number of actual exceptions is consistent 
+    with the VaR model's predictions.
+    ---
+
+    > VaR to be tested
+    ```python
+    VaR =  model.HistoricalSimulation(num_options_s = num_options_s, contract_size_s = contract_size_s, underlying_rets = underlying_rets, interval = 1, alpha = 0.05, warning = False)["var"]
+    ```
+    ```python
+    model.kupiec_test(num_options_s = num_options_s, contract_size_s = contract_size_s, S0_initial_s = S0_initial_s, test_returns = test_returns, var = VaR, interval = 1, alpha = 0.05,alpha_test = 0.05, warning = False)
+    ```
+
+    Sixth method: christoffersen_test()
+    - Backtests the Value-at-Risk (VaR) of a portfolio using the Christoffersen test, a test that focuses on the independence of 
+    exceptions over time. It utilizes the likelihood ratio to examine if the clustering of exceptions is statistically significant.
+    The Christoffersen test evaluates the clustering of exceptions, providing insight into the independence of VaR breaches.
+    ---
+
+    > VaR to be tested
+    ```python
+    VaR =  model.HistoricalSimulation(num_options_s = num_options_s, contract_size_s = contract_size_s, underlying_rets = underlying_rets, interval = 1, alpha = 0.05, warning = False)["var"]
+    ```
+    ```python
+    model.christoffersen_test(num_options_s = num_options_s, contract_size_s = contract_size_s, S0_initial_s = S0_initial_s, test_returns = test_returns, var = VaR, interval = 1, alpha = 0.05, alpha_test = 0.05, warning = False)
+    ```
+
+    Seventh method: combined_test()
+    - Backtests the Value-at-Risk (VaR) of a portfolio by combining results from both the Kupiec and the Christoffersen tests. 
+    This combined approach aims to capture the advantages of both individual tests, providing a more comprehensive assessment 
+    of VaR performance.
+    The test performs the Kupiec test and the Christoffersen test individually and combines their results to offer a more 
+    robust backtesting assessment. The combined likelihood ratio from both tests is then used to make a decision regarding 
+    the performance of the VaR model.
+    ---
+
+    > VaR to be tested
+    ```python
+    VaR =  model.HistoricalSimulation(num_options_s = num_options_s, contract_size_s = contract_size_s, underlying_rets = underlying_rets, interval = 1, alpha = 0.05, warning = False)["var"]
+    ```
+    ```python
+    model.combined_test(num_options_s = num_options_s, contract_size_s = contract_size_s, S0_initial_s = S0_initial_s, test_returns = test_returns, var = VaR, interval =1, alpha = 0.05,alpha_test = 0.05, warning = False)
+    ```
+
+---
+6. `AmOptionRmPort`
+
+    The `AmOptionRmPort` class provides a comprehensive risk management tool designed to evaluate the Value at Risk (VaR) 
+    and Expected Shortfall (ES) for portfolios consisting of American options, leveraging the Binomial Lattice model.
+    At each step, it is assumed that the underlying asset will move either up or down by a certain percentage with a given probability. 
+    This results in a binomial tree representation of possible future asset prices.
+    A DataFrame is constructed which provides a detailed summary of each option's type and its Binomial-Model price.
+
+    Important
+    ---------
+    > ## All the methods related to the Multivariate Garch Model in this class integrate Python and R for efficiency (due to DCC GARCH model in R). 
+    > ### rmgarch: https://cran.r-project.org/web/packages/rmgarch/index.html
+    ---
+    > #### Please ensure the following prerequisites are met:
+    > - An active R environment is required.
+    > - The 'rmgarch' package must be installed in your R environment.
+    > - If you haven't set this up:
+    > 1. Download and install R from:
+    > -  For macOS: https://cran.r-project.org/bin/macosx/
+    > -  For Windows: https://cran.r-project.org/bin/windows/base/
+    > 2. Run the 'install.packages("rmgarch")' command within your R environment.
+    ---
+    > Here below a test function to see if R and the "rmgarch" package is installed in the machine you are using.
+    ```python
+    from pyriskmgmt.SupportFunctions import TestR
+    TestR()
+    ```
+    > If you're working with this package in Google Colab or another cloud-based notebook, follow the steps in three consecutive cells to install the 'rmgarch' package.
+    ```python 
+    !sudo apt-get install -y libgmp-dev
+    ```
+    ```python 
+    !sudo apt-get install -y libmpfr-dev
+    ```
+    ```python
+    !R -e "install.packages('rmgarch')"
+    ```
+    Be advised: the installation of "rmgarch" might take close to 8 minutes due to its extensive dependencies.
+
+    Methodology
+    ------------
+    1. The function sets up a binomial tree with a user-specified number of time steps (steps) leading up to the option's expiration.
+
+    2. The probability of an upward stock price movement (denoted as 'p') and downward movement (denoted as '1-p') are derived in a risk-neutral framework.
+    The derivation depends on the risk-free rate, the volatility of the underlying asset, and the time step duration.
+
+    3. The formulas for these probabilities are:
+        - u (up factor) = e^(sigma * sqrt(dt))
+        - d (down factor) = 1/u
+        - p (probability of an up movement) = (e^(r * dt) - d) / (u - d)
+        Where:
+            - r = risk-free rate
+            - sigma = volatility of the underlying
+            - dt = T/steps (duration of a step, with T being the time to expiration)
+
+    4. Starting at the final nodes of the tree (maturity), the option values are computed based on their intrinsic value. For a call option, it's max(S-K, 0) and for a put option, 
+    it's max(K-S, 0), where S is the stock price and K is the strike price.
+
+    5. The function then recursively calculates the option price at each prior node by discounting the expected future option values from the two possible succeeding nodes 
+    (up and down nodes).
+
+    6. For American options, at each node, the function also checks if exercising the option immediately provides a higher value than holding it.
+    If so, the value from immediate exercise is used.
+
+    7. The price of the American option is found at the root of the tree.
+
+    Initial Parameters
+    ------------------
+    - K_s: An array of strike prices for each option in the portfolio. Represents the price at which the option can be exercised.
+    - T_s: An array of time to maturities for each option. Specifies the time remaining until the option contract is due for expiration.
+      - For instance: expDays = np.array([5,8,12,15,18]); T_s = expDays/252
+    - S0_s: An array of initial spot prices for the underlying asset for each option. It represents the current market value of the asset which the option derives its value from.
+    - r_s: An array of risk-free interest rates for each option (annualized). The risk-free rate represents a theoretical rate of return on an investment with zero risk.
+    - sigma_s: An array of volatilities for the underlying asset for each option (annualized). 
+    - option_type_s: An array indicating the type of each option (e.g., 'call' or 'put'). A call option gives the holder the right to buy the underlying asset, 
+    while a put option gives the holder the right to sell the underlying asset.
+
+    Methods
+    -------
+    - HistoricalSimulation(): Calculates the Value at Risk (VaR) and Expected Shortfall (ES) using historical simulations based on past return scenarios.
+    - ff3 (): Fetches data for the Fama-French three-factor (FF3) model, which includes Market return (MKT), Size (SMB: Small Minus Big), 
+        and Value (HML: High Minus Low) from Ken French's Data Library.
+    - mcModelDrawReturns(): Determines the Value at Risk (VaR) and Expected Shortfall (ES) by simulating correlated future stock returns using a Monte Carlo method, 
+      rooted in various statistical models for volatility and mean returns.
+    - VarEsMinimizer(): seeks to minimize the Value at Risk (VaR) for a given portfolio of European options using historical simulations.
+    - kupiec_test(): Conducts the Kupiec backtest for Value at Risk (VaR). The Kupiec test employs a likelihood ratio test to validate VaR model accuracy.
+    - christoffersen_test(): Implements the Christoffersen test for Value at Risk (VaR), which examines the clustering of violations where actual returns underperform the predicted VaR.
+    - combined_test(): Merges the Kupiec and Christoffersen tests, delivering a holistic assessment of Value at Risk (VaR) model precision.
+
+    Attributes
+    ----------
+    - bi_prices : Array of option prices calculated using the binomial lattice model. This attribute is populated after calling the `fit` method.
+    - summary : A DataFrame containing a summary of each option's type, binomial model price, strike price, time to maturity, initial spot price, risk-free rate, and volatility. 
+
+    Notes
+    -----
+    All input arrays (`K_s`, `T_s`, `S0_s`, `r_s`, `sigma_s`, `option_type_s`) must share the same length as they correspond to 
+    attributes for each option in the portfolio. 
+    The `fit` method is activated by default during the initialization to generate the necessary values and populate the summary DataFrame.
+
+    Additional Notes
+    -----------------
+    - In some methods of this class, for computational reasons, this class employs the QuantLib library package instead of a custom-built binomial tree. 
+
+    - Utilizing the QuantLib library's well-optimized tools can provide more efficient and accurate results, especially for complex 
+    option structures or when high computational performance is needed.
+
+    - In that case: 
+        1. The function begins by setting the calculation date to today's date.
+        2. The Null calendar (which assumes no holidays) and the Actual365Fixed day count convention are used.
+        3. The option type is determined (either call or put).
+        4. Using the provided time to maturity, the exercise date is computed.
+        5. An American exercise is defined, which signifies that the option can be exercised any time before or on the expiration date.
+        6. With all the necessary components (payoff, exercise type, underlying spot, risk-free rate, and volatility), a Black-Scholes process is initiated.
+        7. The BinomialVanillaEngine, specifically with the "eqp" method (equal probabilities), is then applied to this process. 
+        The number of steps provided defines the tree's granularity.
+        8. Once the pricing engine is set, the Net Present Value (NPV) of the option is computed, giving the option's price.
+
+    Example
+    -------
+    Setting up the class:
+
+    ```python
+    # importing required libraries for financial data, numerical operations, and randomization
+    import yfinance as yf; import numpy as np; import random
+
+    # defining a list of tickers for Microsoft, Apple, General Electric, and Tesla
+    tickers = ["MSFT", "AAPL", "GE", "TSLA"]
+
+    # downloading historical stock data for the given tickers between 2021-01-01 and 2023-01-01 with daily intervals and without progress indication
+    data = yf.download(tickers, start='2021-01-01', end= "2023-01-01", progress=False, interval="1d")
+
+    # downloading another set of historical stock data for the given tickers between 2023-01-01 and 2023-08-08 for testing purposes
+    test_data = yf.download(tickers, start='2023-01-01', end="2023-08-08", progress=False, interval="1d")
+
+    # extracting only the 'Adj Close' prices from both sets of data
+    close_prices = data['Adj Close'] 
+    close_prices_test = test_data['Adj Close']
+
+    # finding the last closing price from historical data and the first closing price from the test data
+    S0_s = close_prices.tail(1).values.ravel()
+    S0_initial_s = close_prices_test.head(1).values.ravel()
+
+    # generating random percentages between -5% and 5% for each ticker symbol in the list
+    random_percentages = np.random.uniform(-0.05, 0.05, len(tickers))
+
+    # adjusting the last observed stock price by the random percentages to generate strike prices
+    K_s = S0_s * (1 + random_percentages)
+
+    # generating random integers between 10 and 20, then converting them to time to maturity in years
+    T_s = np.random.randint(10, 20, len(tickers)) / 252
+
+    # setting a constant risk-free rate of 0.04 for each ticker
+    r_s = np.repeat(0.04, len(tickers))
+
+    # generating random volatility values between 0.25 and 0.35 for each ticker
+    sigma_s = np.random.uniform(0.25, 0.35, len(tickers))
+
+    # defining option types as either "call" or "put"
+    option_types = ["call", "put"]
+
+    # randomly choosing an option type for each ticker
+    option_type_s = [random.choice(option_types) for _ in range(len(tickers))]
+
+    # generating random integers between -100 and 100 to represent the number of options
+    num_options_s = np.random.randint(-100, 100, len(tickers))
+
+    for i in range(len(num_options_s)):
+      if num_options_s[i] == 0: num_options_s[i] = 50
+
+    # generating random contract sizes between 5 and 10 for each ticker
+    contract_size_s = np.random.randint(5, 10, len(tickers))
+
+    # calculating the daily returns for the historical and test data, and removing NaN values
+    underlying_rets = close_prices.pct_change().dropna()
+    test_returns = close_prices_test.pct_change().dropna()
+
+    # AmOptionRmPort class
+    from pyriskmgmt.derivative_models import AmOptionRmPort
+    model = AmOptionRmPort(K_s = K_s, T_s = T_s, S0_s = S0_s, r_s = r_s, sigma_s = sigma_s, option_type_s = option_type_s)
+
+    print("Parametric VaR-ES for a Portfolio of American Option:")
+    print("BI Prices:", model.bi_prices)
+    print("Summary")
+    print(model.summary)
+    ```
+
+    First method: HistoricalSimulation()
+    - Performs a historical simulation method for the computation of VaR and Expected Shortfall (ES) for a portfolio of American options. 
+    The method uses historical returns of the underlying asset to simulate potential future returns and subsequently calculates the VaR and ES based on the distribution of the simulated profits and losses.
+
+    - The computation of American option prices within the simulation relies on QuantLib's BinomialVanillaEngine, which is based on the binomial tree model.
+    - This model provides a discrete-time approximation for the option pricing. 
+
+      - The specifics of this method are:
+      1. Set the calculation date to today's date.
+      2. Use the Null calendar and Actual365Fixed day count convention.
+      3. Determine the option type (either call or put).
+      4. Compute the exercise date using the provided time to maturity.
+      5. Define an American exercise.
+      6. Initiate a Black-Scholes process with the required components.
+      7. Apply the BinomialVanillaEngine with the "eqp" method and the provided number of steps.
+      8. Compute the option's Net Present Value (NPV) for its price.
+
+    <br>
+
+    - Moreover, an essential step in this simulation is a comparison between the price from QuantLib's method and the standard Black and Scholes model:
+    - Whenever the QuantLib price is lower than the Black and Scholes price, the latter is used.
+    - This difference has been tested, and its magnitude is minor (on average 0.00xxx). However, it is an approximation.
+    - The focus of this package is Risk Management, not HFT (High-Frequency Trading), making this a good compromise in terms of computational costs.
+    ---
+
+    ```python
+    model.HistoricalSimulation(num_options_s = num_options_s, contract_size_s = contract_size_s, underlying_rets = underlying_rets, interval = 1, alpha = 0.05, warning = False)
+    ```
+
+    Second method: ff3()
+    - This method retrieves Fama French 3 factors (market, size, value) for a particular date range and frequency. 
+    The Fama French 3 factors, retrieved from Ken French's data library, are widely used in finance for risk factor model development. 
+    The three factors are market factor, size factor (SMB - Small Minus Big), and value factor (HML - High Minus Low).
+      - if freq == "daily":
+        url = 'https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Research_Data_Factors_daily_CSV.zip'
+      - elif freq == "weekly":
+        url = 'https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Research_Data_Factors_weekly_CSV.zip'
+      - elif freq == "monthly":
+        url = 'https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Research_Data_Factors_CSV.zip'
+    ---
+
+    ```python
+    ff3 = model.ff3(start_date = '2018-01-01', end_date = "2023-03-03", freq = "daily")
+    ff3 = ff3.loc[underlying_rets.index]
+    ```
+
+    Third method: mcModelRetsSimu()
+    - Simulates returns using Monte Carlo models and calculates the Value-at-Risk (VaR) and Expected Shortfall (ES) based on specified configurations. 
+    
+    - >  A significant feature of this function is the approximation mechanism applied to adjust American option prices.
+
+      - Here's a detailed breakdown:
+
+      1. Utilizing the Binomial and Black-Scholes Models:
+      The method takes into account both the Binomial Model prices and the Black-Scholes prices for American options.
+      The Black-Scholes model is a foundational tool for derivatives traders, but it doesn't consider early exercise of options. 
+      The Binomial model, on the other hand, can handle early exercise and is particularly suited for American options. 
+      However, calculating American option prices using the Binomial model can be computationally expensive, especially for large steps in the tree. 
+      This leads us to the core idea of the approximation.
+
+      2. Introducing the Approximation Mechanism:
+      To optimize speed without compromising too much on accuracy, an approximation ratio (ratio_bi_bs) is calculated from the prices derived from these two models.
+      Essentially, for each option, this ratio represents the TODAY's relationship of its Binomial Model price to its Black-Scholes price. 
+      This is an innovative way to approximate American option prices, borrowing strengths from both models.
+
+      3. Ensuring Robustness against Zero Division and NaN:
+      To ensure that the method remains robust and doesn't falter due to mathematical anomalies, there are layers of checks integrated:
+      - First Layer: Direct comparison to zero. If either the Binomial Model price or the Black-Scholes price for an option is zero, the ratio is set to 1. 
+      This avoids potential division by zero.
+      - Second Layer: After calculating the ratios, any resulting NaN (Not-a-Number) value, which can arise due to divisions like 0/0, is also set to 1.
+      NaN values can cause unpredictable behavior and setting them to 1 ensures stability in the calculations.
+      The essence of this approximation is to quickly and efficiently estimate the prices of American options while taking into account the variations
+      and peculiarities of both the Binomial and Black-Scholes models. This mechanism enables faster risk calculations, making it a valuable asset in time-sensitive financial scenarios.
+    ---
+
+    > Some examples of the mcModelRetsSimu() method:
+    ```python
+    model.mcModelRetsSimu(num_options_s = num_options_s, contract_size_s = contract_size_s, underlying_rets = underlying_rets, sharpeDiag = True, mappingRets = ff3, interval = 1, alpha = 0.05, warning = False)
+    model.mcModelRetsSimu(num_options_s = num_options_s, contract_size_s = contract_size_s, underlying_rets = underlying_rets, sharpeDiag = True, mappingRets = ff3,vol = "ewma", lambda_ewma=0.94, interval = 1, alpha = 0.05, warning = False)
+    model.mcModelRetsSimu(num_options_s = num_options_s, contract_size_s = contract_size_s, underlying_rets = underlying_rets, vol = "ewma", p = 1, q = 1, interval = 1, alpha = 0.05, warning= False)
+    ```
+
+    Forth method: VarEsMinimizer()
+    - Optimizes the number of options in a portfolio to minimize the Value-at-Risk (VaR) and Expected Shortfall (ES) 
+    using historical simulation over a specified interval.
+    The optimization process maintains the overall portfolio position and can allow or disallow short positions based on the 'allow_short' parameter.
+    - The pricing of American options is often close to that of European options, especially when the 
+    option is not deeply in or out of the money and when there's a substantial amount of time until expiration.
+    - Given this closeness in pricing, and for computational efficiency, we use the European option prices to minimize the Value-at-Risk (VaR). 
+    - This allows us to leverage faster techniques available for European options, providing a good approximation for risk minimization of American options.
+    ---
+
+    ```python
+    model.VarEsMinimizer(num_options_s = num_options_s, contract_size_s = contract_size_s, underlying_rets = underlying_rets, interval = 1, alpha = 0.05, warning = False)
+    ```
+    > The VaR resulting from the minimization process must be compared within the same framework of analysis.
+    - Before the minimization process:
+    ```python
+    VaR = model.HistoricalSimulation(num_options_s = num_options_s, contract_size_s = contract_size_s, underlying_rets = underlying_rets, interval = 1, alpha = 0.05, warning = False)["var"]
+    VaR
+    ```
+    - After the minimization process:
+    ```python
+    VaR = model.VarEsMinimizer(num_options_s = num_options_s, contract_size_s = contract_size_s, underlying_rets = underlying_rets, interval = 1, alpha = 0.05, warning = False)["var"]
+    VaR
+    ```
+    - ### *It's important to highlight that all parameters have been kept consistent: (num_options_s = num_options_s, contract_size_s = contract_size_s, underlying_rets = underlying_rets, interval = 1, alpha = 0.05, warning = False)*
+    - ### *This consistency guarantees comparable and significant outcomes.*
+    ###
+
+    Fifth method: kupiec_test()
+    - Backtests the Value-at-Risk (VaR) of a portfolio by applying the Kupiec test, which uses a likelihood ratio to compare the 
+    predicted and actual exceptions.
+    The Kupiec test uses a likelihood ratio to assess whether the number of actual exceptions is consistent 
+    with the VaR model's predictions.
+    ---
+
+    > VaR to be tested
+    ```python
+    VaR = model.mcModelRetsSimu(num_options_s = num_options_s, contract_size_s = contract_size_s, underlying_rets = underlying_rets, vol = "ewma", lambda_ewma = 0.94, interval = 1, alpha = 0.05, warning= False)["var"]
+    ```
+    ```python
+    model.kupiec_test(num_options_s = num_options_s, contract_size_s = contract_size_s, S0_initial_s = S0_initial_s, test_returns = test_returns, var = VaR, interval = 1, alpha = 0.05, alpha_test = 0.05, warning = False)
+    ```
+
+    Sixth method: christoffersen_test()
+    - Backtests the Value-at-Risk (VaR) of a portfolio using the Christoffersen test, a test that focuses on the independence of 
+    exceptions over time. It utilizes the likelihood ratio to examine if the clustering of exceptions is statistically significant.
+    The Christoffersen test evaluates the clustering of exceptions, providing insight into the independence of VaR breaches.
+    ---
+
+    > VaR to be tested
+    ```python
+    VaR = model.mcModelRetsSimu(num_options_s = num_options_s, contract_size_s = contract_size_s, underlying_rets = underlying_rets, vol = "ewma", lambda_ewma = 0.94, interval = 1, alpha = 0.05, warning= False)["var"]
+    ```
+    ```python
+    model.christoffersen_test(num_options_s = num_options_s, contract_size_s = contract_size_s, S0_initial_s = S0_initial_s, test_returns = test_returns, var = VaR, interval = 1, alpha = 0.05, alpha_test = 0.05, warning = False)
+    ```
+
+    Seventh method: combined_test()
+    - Backtests the Value-at-Risk (VaR) of a portfolio by combining results from both the Kupiec and the Christoffersen tests. 
+    This combined approach aims to capture the advantages of both individual tests, providing a more comprehensive assessment 
+    of VaR performance.
+    The test performs the Kupiec test and the Christoffersen test individually and combines their results to offer a more 
+    robust backtesting assessment. The combined likelihood ratio from both tests is then used to make a decision regarding 
+    the performance of the VaR model.
+    ---
+
+    > VaR to be tested
+    ```python
+    VaR = model.mcModelRetsSimu(num_options_s = num_options_s, contract_size_s = contract_size_s, underlying_rets = underlying_rets, vol = "ewma", lambda_ewma = 0.94, interval = 1, alpha = 0.05, warning= False)["var"]
+    ```
+    ```python
+    model.combined_test(num_options_s = num_options_s, contract_size_s = contract_size_s, S0_initial_s = S0_initial_s, test_returns = test_returns, var = VaR, interval = 1, alpha = 0.05, alpha_test = 0.05, warning = False)
+    ```
+
+---
+7. `EquityForwardSingle`
+
+    This class offers tools to assess and compute the VaR and ES at the maturity of forward contracts, 
+    critical in derivative trading and risk management. The two risk assessment techniques 
+    include historical simulation and Monte Carlo simulation using the Geometric Brownian Motion (GBM) model. 
+
+    Additionally, a Kupiec backtest is integrated for evaluating the accuracy of the VaR predictions, crucial for regulatory and internal risk assessment purposes.
+    The forward price is calculated considering the spot price of the equity, a prevailing risk-free interest rate, 
+    any anticipated dividend yield, and the time left to the contract's maturity. 
+
+    Initial Parameters
+    ------------------
+    - S0: Initial spot price of the equity.
+    - T: Time to maturity in years. For instance: for a 8-day contract use 8/252.
+    - r: Risk-free interest rate as a decimal in annual terms (e.g., 0.05 for 5%).
+    - dividend_yield: Dividend yield of the equity as a decimal (annual continuous dividend yield). Default is 0.
+
+    Methods
+    -------
+    - HistoricalSimulation(): Employs historical simulation to determine Value-at-Risk (VaR) and Expected Shortfall (ES) for forward contracts using past underlying asset returns.
+    - mcModelGbm(): Simulates potential equity price paths using the Geometric Brownian Motion (GBM) model and computes the Value-at-Risk (VaR) and Expected Shortfall (ES)
+    for a forward contract.
+    - kupiec_test(): Applies the Kupiec backtest to assess the accuracy of the VaR model by comparing actual vs. expected exceptions.
+
+    Attributes
+    ----------
+    - forward_price : Calculated forward price considering the spot price of the equity, prevailing risk-free interest rate, anticipated dividend yield, and time 
+    left to the contract's maturity.
+    - interval : Interval calculated by multiplying the time to maturity (T) by 252 (commonly used number of trading days in a year). Useful for scaling the time to maturity to daily intervals.
+
+    Example
+    -------
+    Setting up the class:
+
+    ```python
+    # importing necessary libraries for numerical operations, financial data fetching, and random number generation
+    import numpy as np; import yfinance as yf
+
+    # defining the stock ticker for Tesla
+    ticker = ["TSLA"]
+
+    # downloading historical stock data for Tesla between 2021-01-01 and 2023-01-01 with daily intervals and without progress indication
+    data = yf.download(ticker, start='2021-01-01', end= "2023-01-01", progress=False, interval="1d")
+
+    # downloading another set of historical stock data for Tesla between 2023-01-01 and 2023-08-08 for testing purposes
+    test_data = yf.download(ticker, start='2023-01-01', end="2023-08-08", progress=False, interval="1d")
+
+    # extracting only the 'Adj Close' prices from both sets of data
+    close_prices = data['Adj Close'] 
+    close_prices_test = test_data['Adj Close']
+
+    # finding the last closing price from historical data and the first closing price from the test data
+    S0 = close_prices.tail(1).values.ravel()
+    S0_initial = close_prices_test.head(1).values.ravel()
+
+    # generating random integers between 10 and 20, then converting them to time to maturity in years
+    T = np.random.randint(10, 20, len(ticker)) / 252
+
+    # setting a constant risk-free rate of 0.04 for each ticker
+    r = np.repeat(0.04, len(ticker))
+
+    # generating random numbers between 1 and 2.5 for the dividend_yield parameter, then converting it to decimals
+    dividend_yield = np.random.uniform(1, 2.5, len(ticker)) / 100
+
+    # generating random integers between -100 and 100 to represent the number of num_forwards held.
+    num_forward = np.random.randint(-100, 100, len(ticker))
+
+    # setting the number of forwards to 50 if it randomly turns out to be zero
+    if num_forward == 0: num_forward = 50
+
+    # generating random contract sizes between 5 and 10 for each forward
+    contract_size = np.random.randint(5, 10, len(ticker))
+
+    # calculating the daily returns for the historical and test data, and removing NaN values
+    underlying_rets = close_prices.pct_change().dropna()
+    test_returns = close_prices_test.pct_change().dropna()
+
+    # EquityForwardSingle class
+    from pyriskmgmt.derivative_models import EquityForwardSingle
+    model = EquityForwardSingle(S0 = S0, T = T, r = r, dividend_yield = dividend_yield)
+
+    print("Parametric VaR-ES for a Single Forward Contract:")
+    print("Forward Price:", model.forward_price)
+    print("Expiration in", model.interval, "day/s")
+    ```
+
+    First method: HistoricalSimulation()
+    - Estimates the Value-at-Risk (VaR) and Expected Shortfall (ES) for forward contracts at maturity using the historical simulation method based on past underlying asset returns.
+    ---
+
+    ```python
+    model.HistoricalSimulation(underlying_rets = underlying_rets, num_forward = num_forward, alpha = 0.05, warning = False)
+    ```
+
+    Second method: mcModelGbm()
+    - Estimates the Value-at-Risk (VaR) and Expected Shortfall (ES) for forward contracts at matiruty using a Monte Carlo simulation based on the Geometric Brownian Motion (GBM) model and past underlying asset returns.
+    ---
+
+    > Some examples of the mcModelGbm() method:
+    ```python
+    model.mcModelGbm(underlying_rets = underlying_rets, num_forward = num_forward, alpha = 0.05, vol = "ewma", lambda_ewma = 0.94, mu = "moving_average", warning = False)
+    model.mcModelGbm(underlying_rets = underlying_rets, num_forward = num_forward, alpha = 0.05, vol = "simple", mu = "zero", warning = False)
+    model.mcModelGbm(underlying_rets = underlying_rets, num_forward = num_forward, alpha = 0.05, vol = "garch", mu = "constant", p = 2, q = 2, warning = False)
+    ```
+
+    Third method: kupiec_test()
+    - Tests the accuracy of a Value-at-Risk (VaR) model using the Kupiec test. The test compares the actual number of VaR breaches to the expected number, given a certain confidence level.
+    ---
+
+    >  VaR to be tested
+    ```python
+    VaR =  model.mcModelGbm(underlying_rets = underlying_rets, num_forward = num_forward, alpha = 0.05, vol = "simple", mu = "moving_average", warning = False)["var"]
+    ```
+    ```python
+    model.kupiec_test(num_forward = num_forward, S0_initial = S0_initial, test_returns = test_returns, var = VaR, alpha = 0.05, alpha_test = 0.05, warning = False)
+    ```
+
+---
+8. `EquityFutureSingle`
+
+    This class provides a comprehensive toolkit for traders and financial analysts to compute and assess the Value-at-Risk (VaR) and Expected Shortfall (ES) 
+    specifically focused on the maturity of future contracts, a pivotal aspect in derivative trading and risk management.
+
+    Incorporating two primary risk assessment techniques, this package allows for a dual approach:
+    1. Historical Simulation: Harnessing the power of past data to provide insights into potential future risks.
+    2. Monte Carlo Simulation using the Geometric Brownian Motion (GBM) Model: This method adopts stochastic processes to simulate potential 
+    future stock price movements and provide a probabilistic estimate of future risks.
+
+    For enhanced reliability in the risk management process, a Kupiec backtest has been integrated. This backtest is vital for not just 
+    internal evaluations but is also aligned with regulatory requirements, ensuring that the VaR predictions stand up to rigorous testing.
+
+    To ensure practical applicability, the future price calculation has been designed to factor in various real-world parameters like the spot price of the equity, 
+    a prevailing risk-free interest rate, anticipated dividend yields, and the precise time left to a contract's maturity.
+
+    Initial Parameters
+    ------------------
+    - S0: Initial spot price of the equity.
+    - T: Time to maturity in years. For instance: for a 8-day contract use 8/252.
+    - r: Risk-free interest rate as a decimal in annual terms (e.g., 0.05 for 5%).
+    - dividend_yield: Dividend yield of the equity as a decimal (annual continuous dividend yield). Default is 0.
+    - convenience_yield: : This is more common in the context of commodities. It's the non-monetary advantage or premium associated with holding an asset in its 
+    physical form as opposed to a derivative form (annual continuous convenience yield). Default is 0.
+    - storage_cost:  This refers to the costs associated with storing a physical commodity. This is relevant for futures pricing and is part of the cost of carry in financial models (annual continuous storage cost). Default is 0.
+
+    Decision to Omit Margin Calls
+    ------------------------------
+    While the concept of margin calls is integral in many trading scenarios, this package has intentionally omitted it. The reasons are multifold:
+    - Simplification: This package is designed as a foundational tool. Including margin calls might increase the complexity for users unfamiliar with the concept.
+    - Customization: By providing a basic framework, users have the flexibility to enhance and build upon the package, integrating more sophisticated methods like 
+    margin calls if they deem necessary.
+    - Focus: The primary aim is to give a clear perspective on market risks, specifically from adverse price movements. Integrating margin calls might divert from this core focus.
+
+    Methods
+    -------
+    - HistoricalSimulation(): Employs historical simulation to determine Value-at-Risk (VaR) and Expected Shortfall (ES) for forward contracts using past underlying asset returns.
+    This method utilizes the mark-to-market approach and transports the P&L to maturity using the risk-free rate.
+    - mcModelGbm(): Simulates potential equity price paths using the Geometric Brownian Motion (GBM) model and computes the Value-at-Risk (VaR) and Expected Shortfall (ES) 
+    for forward contracts. Similar to the HistoricalSimulation method, this too incorporates the mark-to-market approach and adjusts the P&L to maturity using the risk-free rate.
+    - kupiec_test(): Applies the Kupiec backtest to assess the accuracy of the VaR model by comparing actual vs. expected exceptions.
+
+    Attributes
+    ----------
+    - future_price: Calculated future price considering the spot price of the equity, prevailing risk-free interest rate, anticipated dividend yield, convenience yield, storage costs, 
+    and time left to the contract's maturity.
+    - interval: Interval calculated by multiplying the time to maturity (T) by 252 (commonly used number of trading days in a year). Useful for scaling the time 
+    to maturity to daily intervals.
+
+    Example
+    -------
+    Setting up the class:
+
+    ```python
+    # importing necessary libraries for numerical operations, financial data fetching, and random number generation
+    import numpy as np; import yfinance as yf; import random
+
+    # defining the stock ticker for Tesla
+    ticker = ["TSLA"]
+
+    # downloading historical stock data for Tesla between 2021-01-01 and 2023-01-01 with daily intervals and without progress indication
+    data = yf.download(ticker, start='2021-01-01', end= "2023-01-01", progress=False, interval="1d")
+
+    # downloading another set of historical stock data for Tesla between 2023-01-01 and 2023-08-08 for testing purposes
+    test_data = yf.download(ticker, start='2023-01-01', end="2023-08-08", progress=False, interval="1d")
+
+    # extracting only the 'Adj Close' prices from both sets of data
+    close_prices = data['Adj Close'] 
+    close_prices_test = test_data['Adj Close']
+
+    # finding the last closing price from historical data and the first closing price from the test data
+    S0 = close_prices.tail(1).values.ravel()
+    S0_initial = close_prices_test.head(1).values.ravel()
+
+    # generating random integers between 10 and 20, then converting them to time to maturity in years
+    T = np.random.randint(10, 20, len(ticker)) / 252
+
+    # setting a constant risk-free rate of 0.04 for each ticker
+    r = np.repeat(0.04, len(ticker))
+
+    # generating random numbers between 1 and 2.5 for the dividend_yield, the convenience_yield and the storage_cost parameters. Then converting them to decimals
+
+    dividend_yield = np.random.uniform(1, 2.5, len(ticker)) / 100
+    convenience_yield = np.random.uniform(1, 2.5, len(ticker)) / 100
+    storage_cost = np.random.uniform(1, 2.5, len(ticker)) / 100
+
+    # generating random integers between -100 and 100 to represent the number of num_futures held
+    num_future = np.random.randint(-100, 100, len(ticker))
+
+    # setting the number of futures to 50 if it randomly turns out to be zero
+    if num_future == 0: num_future = 50
+
+    # generating random contract sizes between 5 and 10 for each futures
+    contract_size = np.random.randint(5, 10, len(ticker))
+
+    # calculating the daily returns for the historical and test data, and removing NaN values
+    underlying_rets = close_prices.pct_change().dropna()
+    test_returns = close_prices_test.pct_change().dropna()
+
+    # EquityFutureSingle class
+    from pyriskmgmt.derivative_models import EquityFutureSingle
+    model = EquityFutureSingle(S0 = S0, T = T, r = r, dividend_yield = dividend_yield, convenience_yield = convenience_yield,storage_cost= storage_cost)
+
+    print("Parametric VaR-ES for a Single Future Contract:")
+    print("Future Price:", model.future_price)
+    print("Expiration in", model.interval, "day/s")
+    ```
+
+    First method: HistoricalSimulation()
+    - Employs historical simulation to determine Value-at-Risk (VaR) and Expected Shortfall (ES) for future contracts using past underlying asset returns. 
+    This method utilizes the mark-to-market approach, computing the daily mark-to-market losses and adjusting them to maturity using the risk-free rate.
+    ---
+
+    ```python
+    model.HistoricalSimulation(underlying_rets = underlying_rets, num_future = num_future, alpha = 0.05, warning = False)
+    ```
+
+    Second method: mcModelGbm()
+    - Uses the Geometric Brownian Motion (GBM) model to simulate potential equity price paths and compute Value-at-Risk (VaR) and Expected Shortfall (ES) for future contracts. 
+    This method employs the mark-to-market approach, computing the daily mark-to-market losses and adjusting them to maturity using the risk-free rate.
+    ---
+
+    > Some examples of the mcModelGbm() method:
+    ```python
+    model.mcModelGbm(underlying_rets = underlying_rets, num_future = num_future, alpha = 0.05, vol = "ewma", lambda_ewma = 0.94, mu = "moving_average", warning = False)
+    model.mcModelGbm(underlying_rets = underlying_rets, num_future = num_future, alpha = 0.05, vol = "simple", mu = "zero", warning = False)
+    model.mcModelGbm(underlying_rets = underlying_rets, num_future = num_future, alpha = 0.05, vol = "garch", mu = "constant", p = 1, q = 1, warning = False)
+    ```
+
+    Third method: kupiec_test()
+    - Performs Kupiec's Proportional-of-Failures (POF) test on a given Value-at-Risk (VaR) model. The test examines if the observed frequency of exceptions 
+    (losses exceeding VaR) matches the expected frequency under the VaR model.
+    ---
+
+    > VaR to be tested 
+    ```python
+    VaR =  model.mcModelGbm(underlying_rets = underlying_rets, num_future = num_future, alpha = 0.05, vol = "simple", mu = "moving_average", warning = False)["var"]
+    ```
+    ```python
+    model.kupiec_test(num_future = num_future, S0_initial = S0_initial, test_returns = test_returns, var = VaR, alpha = 0.05, alpha_test = 0.05, warning = False)
+    ```
+
+---
+9. `EquityForwardPort`
+
+    This class offers tools to assess and compute the VaR (Value-at-Risk) and ES (Expected Shortfall) at the maturity of a portfolio of forward contracts, 
+    which is fundamental in derivative trading and risk management. The risk assessment techniques for the portfolio 
+    can include methods like historical simulation and Monte Carlo simulation using the Cholesky decomposition of the VCV.
+    The class calculates the VaR and ES that will occur at the maturity of the last forward contracts in the portfolio. 
+    It also moves money through time using the risk-free rate, allowing for a comprehensive understanding of potential future risks.
+
+    Additionally, a Kupiec backtest can be integrated for evaluating the accuracy of the VaR predictions for the portfolio, 
+    which is pivotal for regulatory and internal risk assessment purposes.
+
+    The forward prices for the portfolio are calculated considering the spot prices of the equities, the prevailing risk-free interest rates, 
+    any anticipated dividend yields, and the times left to the contracts' maturities.
+
+    Important
+    ---------
+    > ## All the methods related to the Multivariate Garch Model in this class integrate Python and R for efficiency (due to DCC GARCH model in R). 
+    > ### rmgarch: https://cran.r-project.org/web/packages/rmgarch/index.html
+    ---
+    > #### Please ensure the following prerequisites are met:
+    > - An active R environment is required.
+    > - The 'rmgarch' package must be installed in your R environment.
+    > - If you haven't set this up:
+    > 1. Download and install R from:
+    > -  For macOS: https://cran.r-project.org/bin/macosx/
+    > -  For Windows: https://cran.r-project.org/bin/windows/base/
+    > 2. Run the 'install.packages("rmgarch")' command within your R environment.
+    ---
+    > Here below a test function to see if R and the "rmgarch" package is installed in the machine you are using.
+    ```python
+    from pyriskmgmt.SupportFunctions import TestR
+    TestR()
+    ```
+    > If you're working with this package in Google Colab or another cloud-based notebook, follow the steps in three consecutive cells to install the 'rmgarch' package.
+    ```python 
+    !sudo apt-get install -y libgmp-dev
+    ```
+    ```python 
+    !sudo apt-get install -y libmpfr-dev
+    ```
+    ```python
+    !R -e "install.packages('rmgarch')"
+    ```
+    Be advised: the installation of "rmgarch" might take close to 8 minutes due to its extensive dependencies.
+
+    Initial Parameters
+    ------------------
+    - S0_s: Array of initial spot prices of the equities in the portfolio.
+    - T_s: Array of times to maturity in years for the contracts in the portfolio.
+      - For instance: expDays = np.array([5,8,12,15,18]); T_s = expDays/252
+    - r_s: Array of risk-free interest rates as decimals for the contracts in the portfolio in annual terms (e.g., 0.05 for 5%).
+    - dividend_yield_s: Array of dividend yields for each equities in the portfolio as decimals. (annual continuous dividend yields). Default is None.
+
+    Methods
+    -------
+    - HistoricalSimulation(): Uses historical data to simulate the Value-at-Risk (VaR) and Expected Shortfall (ES) for the portfolio of forward contracts. 
+    The method takes into account the expiration of the last forward contract, computes the P&L for each contract, and adjusts 
+    them using the risk-free rate.
+    - ff3(): Fetches data for the Fama-French three-factor (FF3) model, which includes Market return (MKT), Size (SMB: Small Minus Big), 
+    and Value (HML: High Minus Low) from Ken French's Data Library.
+    - mcModelRetsSimu(): This method simulates the future value at risk (VaR) and expected shortfall (ES) for forward contracts using Monte Carlo methods.
+    - kupiec_test(): Applies the Kupiec backtest to assess the accuracy of the VaR model by comparing actual vs. expected exceptions.
+
+    Attributes
+    ----------
+    - forward_prices: Array of calculated forward prices for each contract in the portfolio, 
+    considering the spot prices of the equities, prevailing risk-free interest rates, anticipated dividend yields, and time left to the contracts' maturities.
+    - summary: A DataFrame containing summarized information for each forward contract in the portfolio.
+    This includes columns like 'ForwardPrice', 'S0', 'T', 'interval', 'r', and possibly 'dividend_yield', providing a comprehensive overview of the portfolio.
+
+    Example
+    -------
+    Setting up the class:
+
+    ```python
+    # importing required libraries for financial data, numerical operations, and randomization
+    import yfinance as yf; import numpy as np; import random
+
+    # defining a list of tickers for Microsoft, Apple, General Electric, and Tesla
+    tickers = ["MSFT", "AAPL", "GE", "TSLA"]
+
+    # downloading historical stock data for the given tickers between 2021-01-01 and 2023-01-01 with daily intervals and without progress indication
+    data = yf.download(tickers, start='2021-01-01', end= "2023-01-01", progress=False, interval="1d")
+
+    # downloading another set of historical stock data for the given tickers between 2023-01-01 and 2023-08-08 for testing purposes
+    test_data = yf.download(tickers, start='2023-01-01', end="2023-08-08", progress=False, interval="1d")
+
+    # extracting only the 'Adj Close' prices from both sets of data
+    close_prices = data['Adj Close'] 
+    close_prices_test = test_data['Adj Close']
+
+    # finding the last closing price from historical data and the first closing price from the test data
+    S0_s = close_prices.tail(1).values.ravel()
+    S0_initial_s = close_prices_test.head(1).values.ravel()
+
+    # generating random integers between 10 and 20, then converting them to time to maturity in years
+    T_s = np.random.randint(10, 20, len(tickers)) / 252
+
+    # setting a constant risk-free rate of 0.04 for each ticker
+    r_s = np.repeat(0.04, len(tickers))
+
+    # generating random numbers between 1 and 2.5, then converting them to time to decimals
+    dividend_yield_s = np.random.uniform(1, 2.5, len(tickers)) / 100
+
+    # generating random integers between -100 and 100 to represent the number of forwards for each contract
+    num_forward_s = np.random.randint(-100, 100, len(tickers))
+
+    for i in range(len(num_forward_s)):
+      if num_forward_s[i] == 0: num_forward_s[i] = 50
+
+    # generating random contract sizes between 5 and 10 for each ticker
+    contract_size_s = np.random.randint(5, 10, len(tickers))
+
+    # calculating the daily returns for the historical and test data, and removing NaN values
+    underlying_rets = close_prices.pct_change().dropna()
+    test_returns = close_prices_test.pct_change().dropna()
+
+    # EquityForwardPort class
+    from pyriskmgmt.derivative_models import EquityForwardPort
+    model = EquityForwardPort(S0_s = S0_s, T_s = T_s, r_s = r_s, dividend_yield_s= dividend_yield_s)
+
+    print("Parametric VaR-ES for a Portfolio of Forward Contracts:")
+    print("Forward Prices:", model.forward_prices)
+    print("Summary")
+    print(model.summary)
+    ```
+
+    First method: HistoricalSimulation()
+    - This method assumes that the user provides synchronized inputs, i.e., the order of `num_forward_s`, `underlying_rets`, and the internal attributes of the class should be consistent. If not, the results might not be accurate.
+    The computations heavily depend on reshaping and realigning the input data structures to ensure synchronized calculations. 
+    The method uses extensive matrix operations for efficiency.
+    The method computes the VaR and ES at the expiration of the last forward contract. It also accounts for each contract's maturity and adjusts potential gains or losses using the corresponding risk-free rate.
+    ---
+
+    ```python
+    model.HistoricalSimulation(num_forward_s = num_forward_s, underlying_rets = underlying_rets, alpha = 0.05, warning = False)
+    ```
+
+    Second method: ff3()
+    - This method retrieves Fama French 3 factors (market, size, value) for a particular date range and frequency. 
+    The Fama French 3 factors, retrieved from Ken French's data library, are widely used in finance for risk factor model development. 
+    The three factors are market factor, size factor (SMB - Small Minus Big), and value factor (HML - High Minus Low).
+      - if freq == "daily":
+        url = 'https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Research_Data_Factors_daily_CSV.zip'
+      - elif freq == "weekly":
+        url = 'https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Research_Data_Factors_weekly_CSV.zip'
+      - elif freq == "monthly":
+        url = 'https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Research_Data_Factors_CSV.zip'
+    ---
+
+    ```python
+    ff3 = model.ff3(start_date = '2018-01-01', end_date = "2023-03-03", freq = "daily")
+    ff3 = ff3.loc[underlying_rets.index]
+    ```
+
+    Third method: mcModelRetsSimu()
+    - The `mcModelRetsSimu` function simulates Monte Carlo model returns based on specified configurations, accounting for 
+    various risk metrics. The function assumes that all inputs, including `num_forward_s`, `underlying_rets`, and other parameters, are synchronized and in order. The extensive matrix operations embedded within the function are utilized for efficiency 
+    and precision. However, the onus of providing synchronized data rests on the user.
+
+    1. Data Processing:
+    - It aligns and orders the underlying return data as per each forward contract's interval.
+    - Simulated final prices of the underlying assets are deduced, based on various intervals.
+    - The function crafts a 4D data structure by either stacking or expanding these simulated prices to facilitate synchronized computations.
+    2. Profit and Loss Calculation:
+    - P&L scenarios are calculated for every forward contract. Adjustments are made in line with the maturity and the risk-free rate of each contract.
+    - P&L is derived from the discrepancy between the simulated final prices and the forward prices, taking into account whether the position is long or short.
+    3. Risk Metrics Calculation:
+    - VaR and ES are computed based on the amassed P&L scenarios. The VaR is determined as a P&L distribution quantile, considering the specified significance level alpha.
+    - ES, on the other hand, represents the average of the losses surpassing the computed VaR.
+    4. Output:
+    - The final output is a dictionary encompassing the computed VaR and ES values, the maximum and minimum expiration intervals of the forward contracts, and the total number of simulated P&L scenarios.
+    ---
+
+    > Some examples of the mcModelRetsSimu() method:
+    ```python
+    model.mcModelRetsSimu(num_forward_s = num_forward_s, underlying_rets = underlying_rets, alpha = 0.05,  sharpeDiag = True, mappingRets = ff3[["MKT","SMB"]], vol = "ewma",lambda_ewma = 0.94, warning = False)
+    model.mcModelRetsSimu(num_forward_s = num_forward_s, underlying_rets = underlying_rets, alpha = 0.05,  sharpeDiag = True, mappingRets = ff3[["MKT","SMB"]], vol = "garch", p =1, q =1, warning = False)
+    model.mcModelRetsSimu(num_forward_s = num_forward_s, underlying_rets = underlying_rets, alpha = 0.05,  sharpeDiag = False, vol = "simple", warning = False)
+    ```
+
+    Forth method: kupiec_test()
+    - The `kupiec_test` method performs the Kupiec test for the backtesting of Value at Risk (VaR). This test focuses on verifying whether the number of exceptions (times the losses exceed VaR) matches the expected number given a confidence level.
+    The method processes input data, checks and ensures that the forward contracts and returns are synchronized, and computes the P&L scenarios. It then calculates the number of exceptions and compares the observed exceptions against the expected ones using a likelihood ratio test.
+    ---
+
+    > VaR to be tested
+    ```python
+    VaR =  model.HistoricalSimulation(num_forward_s = num_forward_s,underlying_rets = underlying_rets, alpha = 0.05, warning = False)["var"]
+    ```
+    ```python
+    model.kupiec_test(num_forward_s = num_forward_s, S0_initial_s = S0_initial_s, test_returns = test_returns, var = VaR, alpha = 0.05, alpha_test = 0.05, warning = False)
+    ```
+
+---
+10. `EquityFuturePort`
+
+    This class offers tools to assess and compute the VaR (Value-at-Risk) and ES (Expected Shortfall) at the maturity of a portfolio of futures contracts 
+    integral to derivatives trading and risk management. The risk assessment techniques for the portfolio incorporate methods 
+    such as historical simulation and Monte Carlo simulation using the Cholesky decomposition of the VCV. 
+    The class calculates the VaR and ES set to occur at the maturity of the last future contract in the portfolio. It emphasizes the market-to-market approach, 
+    reflecting the continuous revaluation of contracts to account for daily price changes. The class also integrates the notion of moving money through time 
+    using the risk-free rate, enhancing the understanding of potential future risks.
+    
+    A Kupiec backtest can be integrated for evaluating the accuracy of the VaR predictions for the portfolio, critical for both regulatory and internal risk assessment.
+    The future prices for the portfolio consider the equities' spot prices, prevailing risk-free interest rates, any expected dividend yields, convenience yields, storage costs, 
+    and the times left to the contracts' maturities.
+
+    Important
+    ---------
+    > ## All the methods related to the Multivariate Garch Model in this class integrate Python and R for efficiency (due to DCC GARCH model in R). 
+    > ### rmgarch: https://cran.r-project.org/web/packages/rmgarch/index.html
+    ---
+    > #### Please ensure the following prerequisites are met:
+    > - An active R environment is required.
+    > - The 'rmgarch' package must be installed in your R environment.
+    > - If you haven't set this up:
+    > 1. Download and install R from:
+    > -  For macOS: https://cran.r-project.org/bin/macosx/
+    > -  For Windows: https://cran.r-project.org/bin/windows/base/
+    > 2. Run the 'install.packages("rmgarch")' command within your R environment.
+    ---
+    > Here below a test function to see if R and the "rmgarch" package is installed in the machine you are using.
+    ```python
+    from pyriskmgmt.SupportFunctions import TestR
+    TestR()
+    ```
+    > If you're working with this package in Google Colab or another cloud-based notebook, follow the steps in three consecutive cells to install the 'rmgarch' package.
+    ```python 
+    !sudo apt-get install -y libgmp-dev
+    ```
+    ```python 
+    !sudo apt-get install -y libmpfr-dev
+    ```
+    ```python
+    !R -e "install.packages('rmgarch')"
+    ```
+    Be advised: the installation of "rmgarch" might take close to 8 minutes due to its extensive dependencies.
+
+    Initial Parameters
+    ------------------
+    - S0_s: Array of initial spot prices of the equities in the portfolio.
+    - T_s: Array of times to maturity in years for the contracts in the portfolio.
+      - For instance: expDays = np.array([5,8,12,15,18]); T_s = expDays/252
+    - r_s: Array of risk-free interest rates as decimals for the contracts in the portfolio in annual terms (e.g., 0.05 for 5%).
+    - dividend_yield_s: Array of dividend yields for each equities in the portfolio as decimals (annual continuous dividend yields). Default is None.
+    - convenience_yield_s: Array of the contracts' convenience yields in the portfolio as decimals (annual convenience dividend yields). Default is None.
+    - storage_cost_s: Array of the contracts' storage costs in the portfolio as decimals (annual storage costs). Default is None.
+
+    Decision to Omit Margin Calls
+    ------------------------------
+    - Notably, this class does not factor in margin calls. In futures trading, margin calls occur when the value of an investor's margin account falls below the broker's required amount.
+    When the account value drops below the margin requirement, brokers demand that the investor deposit additional money to cover the potential loss. 
+    This ensures that the account is always sufficiently funded to cover the contract's obligations. 
+    However, in the context of this class, the emphasis is placed squarely on evaluating the inherent market risk of a portfolio of futures.
+    By focusing on market risk, the class prioritizes understanding the potential shifts in portfolio value due to market factors, without the added complexity of
+    handling margin requirements and associated cash flows. As such, while margin calls are pivotal in real-world futures trading, ensuring appropriate levels of
+    funds and managing daily changes, their exclusion here allows users to concentrate on the primary goal: assessing market risk in a streamlined manner.
+
+    - Furthermore, it's essential to note that the `EquityFuturePort` class serves as a foundational package, designed with extensibility in mind. 
+    While the current version prioritizes the evaluation of market risk without the intricacies of margin calls, this design choice does not limit the potential of the package.
+    Developers and risk management professionals can leverage this foundational structure to build upon it, introducing more advanced features or specific modifications
+    tailored to unique requirements. By starting with a streamlined and focused version, the package offers a clean slate, 
+    reducing the initial learning curve and providing a clear path for enhancements. This modularity ensures that the class can evolve to cater to a broader spectrum
+    of risk management needs, with the possibility of integrating margin calls or other advanced features in subsequent iterations, 
+    depending on the evolving requirements of the derivatives trading community.
+
+    Methods
+    -------
+    - HistoricalSimulation(): Uses historical data to simulate the VaR and ES for the futures contract portfolio. Takes into account the expiration of the last contract, 
+    computes the P&L for each contract, and adjusts using the risk-free rate.
+    - ff3(): Fetches data for the Fama-French three-factor (FF3) model, including Market return (MKT), Size (SMB), and Value (HML).
+    - mcModelRetsSimu(): Simulates the VaR and ES for future contracts using Monte Carlo methods.
+    - kupiec_test(): Uses the Kupiec backtest to evaluate the VaR model's accuracy through actual vs. expected exceptions comparison.
+
+    Attributes
+    ----------
+    - future_prices: An array derived from the summary DataFrame that holds the computed futures prices for the contracts in the portfolio. 
+    It essentially captures the expected market prices of the equities at the time of the futures contracts' maturity.
+    - summary: A pandas DataFrame that provides an overview of the futures portfolio. It includes details like futures prices, spot prices, risk-free rates, 
+    time to maturity, and other relevant details.
+
+    Example
+    -------
+    Setting up the class:
+
+    ```python
+    # importing required libraries for financial data, numerical operations, and randomization
+    import yfinance as yf; import numpy as np; import random
+
+    # defining a list of tickers for Microsoft, Apple, General Electric, and Tesla
+    tickers = ["MSFT", "AAPL", "GE", "TSLA"]
+
+    # downloading historical stock data for the given tickers between 2021-01-01 and 2023-01-01 with daily intervals and without progress indication
+    data = yf.download(tickers, start='2021-01-01', end= "2023-01-01", progress=False, interval="1d")
+
+    # downloading another set of historical stock data for the given tickers between 2023-01-01 and 2023-08-08 for testing purposes
+    test_data = yf.download(tickers, start='2023-01-01', end="2023-08-08", progress=False, interval="1d")
+
+    # extracting only the 'Adj Close' prices from both sets of data
+    close_prices = data['Adj Close'] 
+    close_prices_test = test_data['Adj Close']
+
+    # finding the last closing price from historical data and the first closing price from the test data
+    S0_s = close_prices.tail(1).values.ravel()
+    S0_initial_s = close_prices_test.head(1).values.ravel()
+
+    # generating random integers between 10 and 20, then converting them to time to maturity in years
+    T_s = np.random.randint(10, 20, len(tickers)) / 252
+
+    # setting a constant risk-free rate of 0.04 for each ticker
+    r_s = np.repeat(0.04, len(tickers))
+
+    # generating random numbers between 1 and 2.5, then converting them to time to decimals
+    dividend_yield_s = np.random.uniform(1, 2.5, len(tickers)) / 100
+    convenience_yield_s = np.random.uniform(1, 2.5, len(tickers)) / 100
+    storage_cost_s = np.random.uniform(1, 2.5, len(tickers)) / 100
+
+    # generating random integers between -100 and 100 to represent the number of futures for each contract
+    num_future_s = np.random.randint(-100, 100, len(tickers))
+
+    for i in range(len(num_future_s)):
+      if num_future_s[i] == 0: num_future_s[i] = 50
+
+    # generating random contract sizes between 5 and 10 for each ticker
+    contract_size_s = np.random.randint(5, 10, len(tickers))
+
+    # calculating the daily returns for the historical and test data, and removing NaN values
+    underlying_rets = close_prices.pct_change().dropna()
+    test_returns = close_prices_test.pct_change().dropna()
+
+    # EquityFuturePort class
+    from pyriskmgmt.derivative_models import EquityFuturePort
+    model = EquityFuturePort(S0_s = S0_s, T_s = T_s, r_s = r_s, dividend_yield_s= dividend_yield_s, convenience_yield_s = convenience_yield_s,storage_cost_s = storage_cost_s)
+
+    print("Parametric VaR-ES for a Portfolio of Future Contracts:")
+    print("Future Prices:", model.future_prices)
+    print("Summary")
+    print(model.summary)
+    ```
+
+    First method: HistoricalSimulation()
+    - This method employs a historical simulation approach to compute the Value at Risk (VaR) and Expected Shortfall (ES) 
+    for a portfolio of future contracts at the expiration of the last future contract. The method leverages daily mark-to-market 
+    (MTM) P&L computations, adjusting them through time using the risk-free rate. Synchronization and consistency of the provided 
+    inputs are of utmost importance. The computations heavily involve reshaping and realigning the input data structures and 
+    extensively utilize matrix operations for efficient processing.
+    ---
+
+    ```python
+    model.HistoricalSimulation(num_future_s = num_future_s,underlying_rets = underlying_rets, alpha = 0.05, warning = False)
+    ```
+
+    Second method: ff3()
+    - This method retrieves Fama French 3 factors (market, size, value) for a particular date range and frequency. 
+    The Fama French 3 factors, retrieved from Ken French's data library, are widely used in finance for risk factor model development. 
+    The three factors are market factor, size factor (SMB - Small Minus Big), and value factor (HML - High Minus Low).
+      - if freq == "daily":
+        url = 'https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Research_Data_Factors_daily_CSV.zip'
+      - elif freq == "weekly":
+        url = 'https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Research_Data_Factors_weekly_CSV.zip'
+      - elif freq == "monthly":
+        url = 'https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Research_Data_Factors_CSV.zip'
+    ---
+
+    ```python
+    ff3 = model.ff3(start_date = '2018-01-01', end_date = "2023-03-03", freq = "daily")
+    ff3 = ff3.loc[underlying_rets.index]
+    ```
+
+    Third method: mcModelRetsSimu()
+    - The `mcModelRetsSimu` function simulates Monte Carlo model returns based on specified configurations, accounting for various risk metrics.
+    The function assumes that all inputs, including `num_future_s`, `underlying_rets`, and other parameters, are synchronized and in order. The extensive matrix operations embedded within the function are utilized for efficiency 
+    and precision. However, the onus of providing synchronized data rests on the user.
+
+    1. Data Processing:
+    The method sorts and reorders the return data based on the expiration interval of each future contract. It then 
+    simulates final prices for the underlying assets based on the corresponding intervals. This results in a synchronized 4D data 
+    structure of simulated prices.
+    2. Profit and Loss Calculation:
+    The method computes the daily mark-to-market (MTM) P&L scenarios for each future contract, adjusting them across time 
+    using the associated risk-free rate. P&L is derived from the differences between simulated final prices and futures 
+    prices, considering the position (long or short) of each contract.
+    3. Risk Metrics Calculation:
+    The aggregated P&L scenarios are used to compute VaR and ES. VaR is the quantile of the P&L distribution at the given 
+    significance level alpha. ES represents the average of the losses exceeding the computed VaR.
+    4. Output:
+    Returns a dictionary encompassing the calculated VaR and ES, maximum and minimum expiration intervals of the future 
+    contracts, and the total number of simulated P&L scenarios.
+    ---
+
+    > Some examples of the mcModelRetsSimu() method:
+    ```python
+    model.mcModelRetsSimu(num_future_s = num_future_s, underlying_rets = underlying_rets, alpha = 0.05,  sharpeDiag = True, mappingRets = ff3[["MKT","SMB"]], vol = "ewma",lambda_ewma = 0.94, warning = False)
+    model.mcModelRetsSimu(num_future_s = num_future_s, underlying_rets = underlying_rets, alpha = 0.05,  sharpeDiag = True, mappingRets = ff3[["MKT","SMB"]], vol = "garch", p =1, q =1, warning = False)
+    model.mcModelRetsSimu(num_future_s = num_future_s, underlying_rets = underlying_rets, alpha = 0.05,  sharpeDiag = False, vol = "simple", warning = False)
+    ```
+
+    Forth method: kupiec_test()
+    - The `kupiec_test` method performs the Kupiec test for the backtesting of Value at Risk (VaR). This test focuses on verifying whether the number of exceptions (times the losses exceed VaR) matches the expected number given a confidence level.
+    The method processes input data, checks and ensures that the future contracts and returns are synchronized, and computes the P&L scenarios. It then calculates the number of exceptions and compares the observed exceptions against the expected ones using a likelihood ratio test.
+    ---
+
+    > VaR to be tested
+    ```python
+    VaR =  model.HistoricalSimulation(num_future_s = num_future_s, underlying_rets = underlying_rets, alpha = 0.05, warning = False)["var"]
+    ```
+    ```python
+    model.kupiec_test(num_future_s = num_future_s, S0_initial_s = S0_initial_s, test_returns = test_returns, var = VaR, alpha = 0.05, alpha_test = 0.05, warning = False)
+    ```
+
+---
+## *For detailed explanations of the various methods within each class, please consult the method-specific docstring. All necessary descriptions and usage guidelines are provided there*.
+---
+
+## 3. `fixed_income_models` 
+
+The `fixed_income_models`  module specializes in calculating Value at Risk (VaR) and Expected Shortfall (ES) for fixed-income securities using both non-parametric and parametric methods.
+For non-parametric risk assessment, the classes `FixedIncomeNprmSingle` and `FixedIncomeNprmPort` are tailored for individual fixed-income securities and fixed-income portfolios, respectively.
+On the parametric side, `FixedIncomePrmSingle` and `FixedIncomePrmPort` offer a more structured approach to evaluating risks associated with individual fixed-income securities and portfolios.
+Additionally, the `YieldCurve` class serves a specific function of downloading and interpolating the yield curve from treasury.gov, which is critical for understanding the risk and return characteristics of fixed-income securities.
+
+The module includes the following classes:
+
+1. `FixedIncomeNprmSingle`
+
+    This class is designed to model Non-Parametric Risk Measures for a single fixed-income position. The class performs calculations
+    for the Value at Risk (VaR) and Expected Shortfall (ES) using either the quantile or bootstrap method.
+    Furthermore, this class also allows for fitting the generalized Pareto distribution (GPD) to the right-hand tail 
+    of the loss distribution to perform an Extreme Vlue Theory (EVT) analysis.
+
+    > The interval of the VaR/Es calculation follows the frequency of the provided returns.
+    
+    Initial Parameters
+    ------------------
+    - returns: Array with returns for the single fixed-income position.
+    - position: The position on the single fixed-income security. A positive value indicates a long position, a negative value indicates a short position.  
+      - The position you possess can be determined by multiplying today's price of the fixed-income security by the quantity you hold.
+    - alpha: The significance level for the risk measure calculations (VaR and ES). Alpha is the probability of the
+    occurrence of a loss greater than or equal to VaR or ES. Default is 0.05.
+    - method: The method to calculate the VaR and ES. The possible values are "quantile" or "bootstrap". Default is "quantile".
+    - n_bootstrap_samples: The number of bootstrap samples to use when method is set to "bootstrap". Default is 10000.
+
+    Methods
+    --------
+    - summary(): Returns a dictionary containing the summary of the calculated risk measures.
+    - evt(): Performs an Extreme Value Theory (EVT) analysis by fitting the Generalized Pareto Distribution 
+    to the right-hand tail of the loss distribution. Returns the calculated VaR and ES under EVT along with the shape and scale parameters of the fitted GPD.
+
+    Attributes
+    ----------
+    - var: float: The calculated Value at Risk.
+    - es: float: The calculated Expected Shortfall.
+
+    Example
+    -------
+    Setting up the class:
+    > #### Historical return data for a specific fixed-income security is typically not freely available online in the same way that stock price data is.
+    > #### To emulate historical return data for a fixed-income position, we can generate synthetic data based on a normal distribution.
+    > #### Although this doesn't represent actual market conditions, it provides a framework for analysis or testing.
+
+    ```python
+    # importing the NumPy library for numerical operations
+    import numpy as np
+
+    # change this with the historical returns of the fixed-income position
+
+    # generating an array of 1000 random numbers sampled from a normal distribution, to simulate returns
+    fixed_income_returns = np.random.normal(0, 1, 1000) / 100
+
+    # FixedIncomeNprmSingle class
+    from pyriskmgmt.fixed_income_models import FixedIncomeNprmSingle
+    model = FixedIncomeNprmSingle(returns = fixed_income_returns, position = 5682.584, alpha = 0.05, method = "quantile")
+
+    print("Non-parametric VaR-ES for a Single Fixed-income Position:")
+    print("VaR:",model.var)
+    print("Es:",model.es)
+    ```
+
+    First method: summary()
+    - Calculates and returns a summary of various risk measures for the given asset.
+    This method calculates the maximum loss, maximum excess loss (over VaR), maximum loss over VaR, and the Expected Shortfall over VaR. These measures are used to give an overall picture of the risk 
+    associated with the asset. All these measures are rounded off to 4 decimal places for readability.
+    ----
+
+    ```python
+    model.summary()
+    ```
+
+    Second method: evt()
+    -  Performs Extreme Value Theory (EVT) to estimate risk measures such as VaR (Value at Risk) 
+    and ES (Expected Shortfall). The EVT estimates are calculated using the Generalized Pareto Distribution (GPD) and maximum likelihood estimation (MLE).
+    EVT is a method used to assess the risk of extreme events. It is particularly useful for estimating the risk of rare events that are not well-represented in the available data.
+    ----
+
+    ```python
+    model.evt(alpha = 0.025, quantile_threshold = 0.95)
+    ```
+
+---
+2. `FixedIncomeNprmPort`
+
+    The `FixedIncomeNprmPort` class is a non-parametric risk management class designed to provide risk measures for a portfolio of fixed-income positions.
+    The non-parametric approach does not rely on any assumptions regarding the underlying distribution of the fixed-income securities returns. 
+
+    > The interval of the VaR/Es calculation follows the frequency of the provided returns.
+
+    Initial Parameters
+    ------------------
+    - returns: A numpy array of fixed-income positions returns.
+    - positions: A list of fixed-income positions.
+      - For each bond: the position you possess can be determined by multiplying the bond's present-day price by the quantitiy you hold.
+    - alpha: The significance level for VaR and ES calculations. Default is 0.05.
+    - method: A method to be used for the VaR and ES calculations. The options are "quantile" for quantile-based VaR and ES calculation or "bootstrap" for a 
+    bootstrap-based calculation. Default is "quantile".
+    - n_bootstrap_samples: The number of bootstrap samples to be used when the bootstrap method is selected. This is ignored when the quantile method is selected.
+    Default is 10000.
+
+    Methods
+    --------
+    - summary(): Provides a summary of the risk measures, including VaR, Expected Shortfall (ES), Maximum Loss, Maximum Excess Loss, and ratios of these measures.
+    - evt(): Provides risk measures using Extreme Value Theory (EVT). This is a semi-parametric approach that fits a Generalized Pareto Distribution (GPD) to the tail 
+    of the loss distribution.
+    - MargVars(): Provides the marginal VaRs for each bond position in the portfolio. This is calculated as the change in portfolio VaR resulting from a small 
+    change in the position of a specific fixed-income security.
+    
+    Attributes
+    ---------
+    - var: The calculated Value at Risk (VaR) for the portfolio.
+    - es: The calculated Expected Shortfall (ES) for the portfolio.
+    - port_returns: Cumulative returns of the portfolio based on the fixed-income positions returns. 
+
+    Example
+    -------
+
+    Setting up the class:
+    ```python
+    # importing the NumPy library for numerical operations
+    import numpy as np
+
+    # change this with the historical returns (matrix) of the fixed-income positions
+
+    # generating an array of 1000*5 random numbers sampled from a normal distribution, to simulate returns
+    fixed_income_returns_matrix = np.random.normal(0, 1, size=(1000, 5)) / 100
+
+    # defining initial monetary positions for each of the 5 bonds
+    # for every bond: number of bonds * today's price
+    positions = [-2564.54, 5816.849, 2684.19, -26011.289, 2248.655]
+
+    # FixedIncomeNprmPort class
+    from pyriskmgmt.fixed_income_models import FixedIncomeNprmPort
+    model = FixedIncomeNprmPort(returns = fixed_income_returns_matrix, positions = positions, alpha = 0.05, method = "quantile")
+
+    print("Non-parametric VaR-ES for a Portfolio of Fixed-income Securities:")
+    print("VaR:",model.var)
+    print("Es:",model.es)
+    ```
+
+    First method: summary()
+    - Computes various risk metrics for the portfolio and returns them in a dictionary.
+    ---
+
+    ```python
+    model.summary()
+    ```
+
+    Second method: evt()
+    - Estimates the Value at Risk (VaR) and Expected Shortfall (ES) using the Extreme Value Theory (EVT).
+    EVT is used for assessing risk for extreme events. This function implements both quantile-based and bootstrap-based methods for EVT.
+    ----
+
+    ```python
+    model.evt(alpha = 0.025, quantile_threshold = 0.95)
+    ```
+
+    Third method: MargVars()
+    - Computes the Marginal Value at Risk (MVaR) for each asset in the portfolio using a non-parametric approach.
+    MVaR measures the rate of change in the portfolio's VaR with respect to a small change in the position of a specific asset. 
+    This method works by perturbing each asset's position by a small amount (proportional to 1/scale_factor), calculating the new VaR,
+    and measuring the difference from the original VaR. The result is an array of MVaRs, one for each asset.
+    ---
+
+    > only available if self.method = "quantile"
+    ```python
+    model.MargVars(scale_factor = 0.3)
+    ```
+
+---
+3. `YieldCurve`
+
+    This class provides functionalities for fetching, plotting, and interpolating the U.S. Treasury yield curve data. 
+    The yield curve represents the relationship between interest rates and the time to maturity of a debt for a borrower in a given currency.
+    The curve is a critical indicator in financial markets, often used as a benchmark for other interest rates, and provides insights into future economic conditions.
+
+    - https://home.treasury.gov/resource-center/data-chart-center/interest-rates/TextView?type=daily_treasury_yield_curve&field_tdr_date_value
+
+    - The downloaded yield curve will have a DataFrame structure, where the columns are time to maturity in months and the values are interest rates in percentages. 
+    For example, a value of 5.37 represents an interest rate of 5.37%.
+
+    ```
+    | Date      |   1  |   2  |   3  |  6   |  12  |  24  |  36  |  60  |  84  |  120 |  240 |  360 |
+    |-----------|------|------|------|------|------|------|------|------|------|------|------|------|
+    | 01/03/2022| 0.05 | 0.06 | 0.08 | 0.22 | 0.40 | 0.78 | 1.04 | 1.37 | 1.55 | 1.63 | 2.05 | 2.01 |
+    | 01/04/2022| 0.06 | 0.05 | 0.08 | 0.22 | 0.38 | 0.77 | 1.02 | 1.37 | 1.57 | 1.66 | 2.10 | 2.07 |
+    ...
+    | 08/28/2023| 5.56 | 5.53 | 5.58 | 5.56 | 5.44 | 4.98 | 4.69 | 4.38 | 4.32 | 4.20 | 4.48 | 4.29 |
+    | 08/29/2023| 5.54 | 5.53 | 5.56 | 5.52 | 5.37 | 4.87 | 4.56 | 4.26 | 4.21 | 4.12 | 4.42 | 4.23 |
+
+    ```
+    > Zero-Coupon Bond (ZCB) Pricing Example
+    > ----------------------------------------
+    > One application of this yield curve data is in pricing zero-coupon bonds (ZCBs). 
+    > - Let fix the yield for a 24-month maturity at 4.87%, and the face value of the ZCB at $1000.
+    > - The price of a ZCB, calculated using the well-known formula, would be:
+      > - Price = Face Value / (1 + (Yield / 100))^Time to Maturity = $1000 / (1 + (4.87 / 100))^2 = $909.28
+
+      <br>
+    
+    Initial Parameters
+    ------------------
+    - years_back : Number of years back for which to fetch yield curve data. Default is set to 2.
+
+    Methods:
+    --------
+    - PlotYieldCurve(): Plots the yield curve using seaborn and matplotlib. Accepts optional figsize argument to adjust the size of the plot.
+    - InterpolateYieldCurve(): Interpolates the yield curve using either linear interpolation or cubic spline. 
+    Optionally only interpolates the yield curve for today.
+
+    Attributes
+    ----------
+    yield_curve_df : DataFrame containing fetched yield curve data.
+    today : Today's date in MM/DD/YYYY format.
+    yield_curve_today : Series containing yield curve data for today.
+    
+    Example
+    -------
+
+    Setting up the class:
+
+    ```python
+    # YieldCurve class
+    from pyriskmgmt.fixed_income_models import YieldCurve
+    model = YieldCurve(years_back=2)
+
+    print("")
+    print("Yield Curve")
+    print(model.yield_curve_df)
+    print("Yield Curve Today")
+    print(model.yield_curve_today)
+    ```
+
+    First method: PlotYieldCurve()
+    - Plots the yield curve data for today using seaborn and matplotlib.
+    This method takes the yield_curve_today Series attribute to plot a line graph, representing the yield curve for the 
+    specified date. The x-axis indicates the time to maturity in months, and the y-axis indicates the yield in percentage.
+    ---
+
+    ```python
+    model.PlotYieldCurve(figsize=(15, 4))
+    ```
+
+    Second method: InterpolateYieldCurve()
+    - Interpolates the yield curve data to provide more granular time-to-maturity points. 
+    Interpolation can be performed either for the yield curve of today or for all historical yield curve data in the DataFrame.
+    The method offers two interpolation techniques: linear interpolation and cubic spline interpolation.
+    ---
+
+    > Interpolation of the entire curve
+    ```python
+    interpolated_data = model.InterpolateYieldCurve(method= "cubic_spline", yield_curve_today=True)
+    ```
+    > Interpolation of today's yield curve
+    ```python 
+    interpolated_data = model.InterpolateYieldCurve(method= "linear", yield_curve_today=False)
+    ```
+
+---
+4. `FixedIncomePrmSingle`
+
+    This class provides the functionalities to price fixed-income securities, specifically bonds, and calculate their 
+    associated risk metrics such as duration, yield-to-maturity, Value-at-Risk (VaR), and Expected Shortfall (ES). 
+    
+    Important
+    ---------
+    - Due to the constraint in how the 'maturity' parameter is designed, it can only accept either an integer value representing full years or a decimal value
+    like 0.5 to indicate semi-annual periods. 
+    - As a result of this constraint, the class is designed to assist in evaluating the risk and return of a bond position at the time of the bond's issuance or
+    just after a coupon payment in the case of a coupon-bearing bond. For a zero-coupon bond, it is meant to be used either at the time of issuance or
+    every six months thereafter.
+    The class supports both zero-coupon bonds (ZCB) and coupon-bearing bonds, with the option for annual or semi-annual payments.
+
+    > For other types of Bond this module offers a NON-PARAMETRIC APPROACH: FixedIncomeNprmSingle() 
+
+    Purpose
+    -------
+    This class aims to provide a solid foundation for understanding and analyzing fixed-income securities. It is designed to serve two main audiences:
+
+    1. Those who are looking to further develop or integrate more complex calculations and risk management strategies. 
+    This class offers a reliable basis upon which additional features and functionalities can be built.
+    
+    2. Those who intend to use the class within its given boundaries for straightforward pricing and risk assessment of fixed-income securities.
+    For this audience, the class provides ready-to-use methods for calculating key metrics like bond price, duration, yield-to-maturity, Value-at-Risk (VaR), and Expected Shortfall (ES).
+
+    - By catering to both of these needs, the class offers a flexible and robust starting point for a range of fixed-income analysis and risk management tasks.
+
+    Initial Parameters
+    ------------------
+    - yield_curve_today : The DataFrame containing the current yield curve, with terms in months as columns and the yield rates as row values.
+    The yield rates should be represented as a percentage, e.g., 3% should be given as 3.
+
+    ```
+    | Date      |   1  |   2  |   3  |  4   |  5   | ...  | 355  |  356 |  357 |  358 |  359 |  360 |
+    |-----------|------|------|------|------|------|------|------|------|------|------|------|------|
+    | 08/29/2023| 5.54 | 5.53 | 5.52 | 5.51 | 5.51 | 4.87 | 4.56 | 4.26 | 4.21 | 4.19 | 4.18 | 4.19 |
+    ```
+
+    - maturity: The time to maturity of the bond in years. Must be either an integer value for full years or a decimal value like 0.5 to indicate semi-annual periods.
+    Default is 1.
+    - num_assets: Number of identical assets/bonds for the calculation.
+    Default is 1.
+    - face_value: The face value of the bond.
+    Default is 1000.
+    - is_zcb: Indicator to specify whether the bond is a zero-coupon bond. Default is True.
+    - coupon_rate: The annual coupon rate of the bond represented as a percentage (e.g., 3% should be given as 3) (required if is_zcb is set to False).
+    Default is None.
+    - semi_annual_payment: Indicator to specify if the bond pays coupons semi-annually (required if is_zcb is set to False).
+    Default is None.
+
+    Methods
+    -------
+    - DurationNormal(): Calculates the Value-at-Risk (VaR) and Expected Shortfall (ES) of a bond position using a normal distribution model.
+    This method assumes a normal distribution of yield changes and uses the modified duration of the bond
+    to approximate the change in bond price for a given change in yield.
+    - HistoricalSimulation(): In this approach, historical data is used to generate a distribution of potential outcomes,
+    which can be more realistic compared to model-based approaches like the Duration-Normal method.
+
+    Attributes
+    ----------
+    - bond_price: The price of the bond calculated based on either zero-coupon or coupon-bearing.
+    - duration: The Macaulay duration of the bond (in years).
+    - modified_duration: The modified duration of the bond (in years).
+    - yield_to_maturity: Yield to maturity of the bond (yearly).
+
+    Exceptions
+    ----------
+    - Raises an exception if the coupon_rate and semi_annual_payment are not provided when is_zcb is set to False.
+    - Raises an exception if the maturity provided is beyond the highest maturity available in the yield_curve_today DataFrame.
+    - Raises an exception if the maturity provided ends with .5, is_zcb is False and semi_annual_payment is not True.
+
+    Note
+    ----
+    The yield curve provided should be a monthly yield curve, with maturity ranging from 1 to n months.
+    
+    Example
+    -------
+
+    Setting up the class:
+
+    ## 1. ZCB example
+
+    ```python
+    # importing the NumPy library for numerical operations
+    import numpy as np
+
+    # importing the YieldCurve class from the pyriskmgmt.fixed_income_models package
+    from pyriskmgmt.fixed_income_models import YieldCurve
+
+    # initializing a YieldCurve object and setting years_back to 1
+    model = YieldCurve(years_back=1)
+
+    # interpolating the yield curve using cubic spline for past data
+    yield_curve = model.InterpolateYieldCurve(method="cubic_spline", yield_curve_today=False)
+
+    # interpolating the yield curve using cubic spline for today's data
+    yield_curve_today = model.InterpolateYieldCurve(method="cubic_spline", yield_curve_today=True)
+
+    # setting the maturity of the financial asset to 7 years
+    maturity = 7
+
+    # generating a random integer between -100 and 100 to represent the number of assets
+    num_assets = np.random.randint(-100, 100, 1)
+
+    # checking if the number of assets is zero and setting it to 50 if it is 0
+    if num_assets == 0: num_assets = 50
+
+    # setting the face value of the financial asset to 1000
+    face_value = 1000
+
+    # specifying that the financial asset is a zero-coupon bond
+    is_zcb = True
+
+    # FixedIncomePrmSingle class
+    from pyriskmgmt.fixed_income_models import FixedIncomePrmSingle
+    model = FixedIncomePrmSingle(yield_curve_today = yield_curve_today,maturity = maturity, num_assets = num_assets, face_value = face_value, is_zcb = is_zcb)
+
+    print("")
+    print("Parametric VaR-ES for a Single Fixed-income Asset:")
+    print("ZCB Price:",model.bond_price)
+    print("ZCB Duration:",model.duration)
+    print("ZCB Modified Duration:",model.modified_duration)
+    print("ZCB Yield To Maturity:",model.yield_to_maturity)
+    ```
+
+    ## 2. CB example (semi-annual payments)
+
+    ```python
+    # importing the NumPy library for numerical operations
+    import numpy as np
+
+    # importing the YieldCurve class from the pyriskmgmt.fixed_income_models package
+    from pyriskmgmt.fixed_income_models import YieldCurve
+
+    # initializing a YieldCurve object and setting years_back to 1
+    model = YieldCurve(years_back=1)
+
+    # interpolating the yield curve using cubic spline for past data
+    yield_curve = model.InterpolateYieldCurve(method="cubic_spline", yield_curve_today=False)
+
+    # interpolating the yield curve using cubic spline for today's data
+    yield_curve_today = model.InterpolateYieldCurve(method="cubic_spline", yield_curve_today=True)
+
+    # setting the maturity of the financial asset to 7 years
+    maturity = 7.5
+
+    # generating a random integer between -100 and 100 to represent the number of assets
+    num_assets = np.random.randint(-100, 100, 1)
+
+    # checking if the number of assets is zero and setting it to 50 if it is 0
+    if num_assets == 0: num_assets = 50
+
+    # setting the face value of the financial asset to 1000
+    face_value = 1000
+
+    # specifying that the financial asset is a zero-coupon bond
+    is_zcb = False
+
+    # specifying the  coupon rate
+    coupon_rate = 3
+
+     # specifying the semi annual payment parameter
+    semi_annual_payment = True 
+
+    # FixedIncomePrmSingle class
+    from pyriskmgmt.fixed_income_models import FixedIncomePrmSingle
+    model = FixedIncomePrmSingle(yield_curve_today = yield_curve_today,maturity = maturity, num_assets = num_assets, face_value = face_value, is_zcb = is_zcb, coupon_rate = coupon_rate, semi_annual_payment = semi_annual_payment)
+
+    print("")
+    print("Parametric VaR-ES for a Single Fixed-income Asset:")
+    print("Semi-annual CB - Price:",model.bond_price)
+    print("Semi-annual CB - Duration:",model.duration)
+    print("Semi-annual CB - Modified Duration:",model.modified_duration)
+    print("Semi-annual CB - Yield To Maturity:",model.yield_to_maturity)
+    ```
+
+    First method: DurationNormal()
+    - This method calculates the Value at Risk (VaR) and Expected Shortfall (ES) for a given bond position using the Modified Duration mapping approach.
+    ---
+
+    > Some examples of the DurationNormal() method:
+    ```python
+    model.DurationNormal(yield_curve = yield_curve,vol = "garch", interval = 25, p = 1, q = 1, alpha = 0.05)
+    model.DurationNormal(yield_curve = yield_curve,vol = "ewma", interval = 25, lambda_ewma = 0.98, alpha = 0.05)
+    ```
+
+    Second method: HistoricalSimulation()
+    - In this approach, historical data is used to generate a distribution of potential outcomes, which can be more realistic compared to model-based approaches like the Duration-Normal method.
+    ---
+
+    ```python
+    model.HistoricalSimulation(yield_curve = yield_curve,interval = 25, alpha = 0.05)
+    ```
+
+---
+5. `FixedIncomePrmPort`
+
+    This class offers the functionalities for pricing and risk assessment of a portfolio of bond securities. 
+    It not only facilitates the calculation of portfolio-level risk metrics such as duration, yield-to-maturity, Value-at-Risk (VaR), and Expected Shortfall (ES),
+    but also provides the same metrics for each individual bond within the portfolio.
+
+    Important Features and Constraints
+    ----------------------------------
+    1. `maturity_s` Array Parameter:
+    - Accepts either integer values to represent full years or decimals like 0.5 for semi-annual periods.
+    - Optimized for risk and return evaluation at specific time-points: either at the time of issuance or 
+      just after a coupon payment for coupon-bearing bonds.
+    
+    2. Alignment Within Maturities:
+    - The class is designed to account for alignment within the maturities of the bonds in the portfolio.
+    - The system in place requires every bond to either mature or have its subsequent payment due in intervals that are multiples of six months.
+    - While this is a limitation since it doesn't account for bonds with non-standard payment schedules or already issued ones, it provides a base that future developers can build upon to create more advanced evaluation mechanisms.
+    - Therefore, optimal usage is at the time of issuance of all bonds bond or every six months thereafter.
+    
+    3. Bond Compatibility:
+    - Compatible with portfolios that include both zero-coupon bonds and coupon-bearing bonds.
+    - Provides options for annual or semi-annual coupon payments for coupon-bearing bonds.
+  
+    > For other types of Bond Portofolio this module offers a NON-PARAMETRIC APPROACH: FixedIncomeNprmPort() 
+
+    Purpose
+    -------
+    This class aims to provide a comprehensive toolkit for understanding, analyzing, and managing portfolios of fixed-income securities. 
+    It is tailored to serve two main audiences:
+
+    1. Portfolio Managers and Quantitative Analysts: 
+        - For professionals who aim to develop or integrate more sophisticated calculations and risk management strategies, 
+        this class serves as a robust foundation. It offers a reliable basis upon which additional features, functionalities, and asset classes can be incorporated.
+
+    2. Individual Investors and Educators: 
+        - For those who intend to use the class for straightforward portfolio pricing and risk assessment, the class offers an array of ready-to-use methods. 
+        These methods enable the calculation of key portfolio-level metrics such as aggregate bond price, portfolio duration, portfolio yield-to-maturity,
+        Value-at-Risk (VaR), and Expected Shortfall (ES). 
+
+    In addition, this class also allows users to drill down into the specifics of each bond within the portfolio, offering metrics like individual bond price, duration,
+    and yield-to-maturity.
+    By catering to both of these needs, the class offers a flexible and robust starting point for a range of fixed-income analysis and risk management tasks.
+
+    Initial Parameters
+    ------------------
+    - yield_curve_today : The DataFrame containing the current yield curve, with terms in months as columns and the yield rates as row values.
+    The yield rates should be represented as a percentage, e.g., 3% should be given as 3.
+
+    ```
+    | Date      |   1  |   2  |   3  |  4   |  5   | ...  | 355  |  356 |  357 |  358 |  359 |  360 |
+    |-----------|------|------|------|------|------|------|------|------|------|------|------|------|
+    | 08/29/2023| 5.54 | 5.53 | 5.52 | 5.51 | 5.51 | 4.87 | 4.56 | 4.26 | 4.21 | 4.19 | 4.18 | 4.19 |
+    ```
+
+    - maturity_s : Array of times to maturity for the bonds in the portfolio, in years. Each value must be either an integer for full years or a decimal like 0.5
+    to indicate semi-annual periods.
+    - num_assets_s : Array representing the number of identical assets/bonds for each bond in the portfolio.
+    - face_value_s : Array containing the face values of the bonds in the portfolio.
+    - is_zcb_s : Array of boolean indicators to specify whether each bond in the portfolio is a zero-coupon bond.
+    - coupon_rate_s : Array of the annual coupon rates for the bonds in the portfolio, represented as percentages 
+    (e.g., 3% should be entered as 3). This array is required if `is_zcb` contains any `False` values. Default is None.
+    - semi_annual_payment_s : Array of boolean indicators to specify whether each bond in the portfolio pays coupons semi-annually.
+    This array is required if `is_zcb` contains any `False` values. Default is None.
+
+    Example of Initial Parameters
+    -----------------------------
+    - maturity_s = array([4, 1, 2.5, 2, 4.5])
+    - num_assets_s = array([ 100,  40, -35,  25, -75])
+    - face_value_s = array([1000, 1000, 1000, 1000, 1000])
+    - is_zcb_s = array([ True,  True, False, False, False])
+    - coupon_rate_s = array([0, 0, 2, 2, 3])
+    - semi_annual_payment_s = array([False, False,  True, False,  True])
+
+    Methods
+    -------
+    - DurationNormal() : Calculates the Value-at-Risk (VaR) and Expected Shortfall (ES) of a portfolio of bond using a normal distribution model.
+    This method assumes a normal distribution of yield changes and uses the modified duration of the portfolio
+    to approximate the change in bond price for a given change in yield.
+    - HistoricalSimulation() : In this approach, historical data is used to generate a distribution of potential outcomes,
+    which can be more realistic compared to model-based approaches like the Duration-Normal method.
+
+    Attributes
+    ----------
+    - bond_prices: The price of each bond within the portfolio, calculated based on whether it is a zero-coupon or coupon-bearing bond.
+    - durations: The Macaulay duration (in years) for each bond within the portfolio.
+    - modified_durations: The modified duration (in years) for each bond within the portfolio.
+    - yield_to_maturities: The yield to maturity (annualized) for each bond within the portfolio.
+    - initial_position: Initial financial position of the portfolio, considering the characteristics of each bond.
+    - tot_future_payments: Total future payments to be received from all bonds within the portfolio.
+    - summary: A comprehensive summary of the portfolio's attributes.
+
+    Exceptions
+    ----------
+    - Raises an exception if the coupon_rate and semi_annual_payment are not provided when is_zcb is set to False.
+    - Raises an exception if the maturity provided is beyond the highest maturity available in the yield_curve_today DataFrame.
+
+    Note
+    ----
+    The yield curve provided should be a monthly yield curve, with maturity ranging from 1 to n months.
+
+    Example
+    -------
+
+    Setting up the class:
+
+    ```python
+    # importing the NumPy library for numerical operations
+    import numpy as np
+
+    # importing the YieldCurve class from the pyriskmgmt.fixed_income_models package
+    from pyriskmgmt.fixed_income_models import YieldCurve
+
+    # initializing a YieldCurve object with data from the last 1 year
+    model = YieldCurve(years_back=1)
+
+    # interpolating historical yield curve data using the cubic spline method
+    yield_curve = model.InterpolateYieldCurve(method="cubic_spline", yield_curve_today=False)
+
+    # interpolating the yield curve for today using the cubic spline method
+    yield_curve_today = model.InterpolateYieldCurve(method="cubic_spline", yield_curve_today=True)
+
+    # setting the number of bonds to 5
+    number_of_bonds = 5
+
+    # generating random integers between 1 and 15 for the integer part of maturities
+    int_part = np.random.randint(1, 15, number_of_bonds)
+
+    # generating random choices between 0 and 0.5 to potentially add to the integer part
+    choice = np.random.choice([0, 0.5], number_of_bonds)
+
+    # creating the final array for bond maturities by adding the integer part and the choice
+    maturity_s = int_part + choice
+
+    # generating random integers between -50 and 50 to represent the number of assets for each bond
+    num_assets_s = np.random.randint(-50, 50, number_of_bonds)
+
+    # handling the case where by chance the num_assets is 0, setting it to 25
+    for i in range(len(num_assets_s)):
+        if num_assets_s[i] == 0: num_assets_s[i] = 25
+
+    # setting the face value of all bonds to 1000
+    face_value_s = np.repeat(1000, number_of_bonds)
+
+    # generating random choices of True or False to indicate if bonds are zero-coupon bonds
+    is_zcb_s = np.random.choice([True, False], number_of_bonds)
+
+    # identifying which elements in maturity_s end with 0.5
+    condition_maturity_s = np.mod(maturity_s * 10, 10) == 5
+
+    # updating is_zcb_s based on the condition in maturity_s to set corresponding elements to False
+    is_zcb_s = np.logical_and(is_zcb_s, np.logical_not(condition_maturity_s))
+
+    # generating random integers between 2 and 4 to represent the coupon rate for each bond
+    coupon_rate_s = np.random.randint(2, 4, number_of_bonds)
+
+    # setting the coupon rate to 0 for zero-coupon bonds
+    coupon_rate_s[is_zcb_s] = 0
+
+    # identifying which bonds have semi-annual payments based on whether maturity ends with 0.5 and is not a zero-coupon bond
+    semi_annual_payment_s = np.mod(maturity_s * 10, 10) == 5
+    semi_annual_payment_s = np.logical_and(semi_annual_payment_s, np.logical_not(is_zcb_s))
+
+    # FixedIncomePrmPort class
+    from pyriskmgmt.fixed_income_models import FixedIncomePrmPort
+    model = FixedIncomePrmPort(yield_curve_today = yield_curve_today,maturity_s = maturity_s, num_assets_s = num_assets_s, face_value_s = face_value_s, is_zcb_s = is_zcb_s, coupon_rate_s = coupon_rate_s, semi_annual_payment_s = semi_annual_payment_s)
+
+    print("")
+    print("Parametric VaR-ES for a Portfolio of Fixed-income Asset:")
+    print("Bond Prices:",model.bond_prices)
+    print("Bond Durations:",model.durations)
+    print("Bond Modified Durations:",model.modified_durations)
+    print("Bond Yield To Maturities:",model.yield_to_maturities)
+    print("Bonds' future payments:",model.tot_future_payments)
+    print("Tot Initial Position", model.initial_position)
+    print("")
+    print("Summary")
+    print(model.summary)
+    ```
+
+    First method: DurationNormal()
+    - This method calculates the Value at Risk (VaR) and Expected Shortfall (ES) for a given bond position using the Modified Duration mapping approach.
+    ---
+
+    > Some examles of the DurationNormal() method:
+    ```python
+    model.DurationNormal(yield_curve = yield_curve,vol = "simple", interval = 25, alpha = 0.05)
+    model.DurationNormal(yield_curve = yield_curve,vol = "garch", interval = 25, p = 1, q = 1, alpha = 0.05)
+    model.DurationNormal(yield_curve = yield_curve,vol = "ewma", interval = 25, lambda_ewma = 0.95, alpha = 0.05)
+    ```
+
+    Second method: HistoricalSimulation()
+    - In this approach, historical data is used to generate a distribution of potential outcomes, which can be more realistic compared to model-based approaches like the Duration-Normal method.
+    ---
+
+    ```python
+    model.HistoricalSimulation(yield_curve = yield_curve,interval = 25, alpha = 0.05)
+    ```
+
+---
+## *For detailed explanations of the various methods within each class, please consult the method-specific docstring. All necessary descriptions and usage guidelines are provided there*.
+---
+
