@@ -1,4 +1,4 @@
-# Risk Management Package - pyriskmgmt
+# Risk Management Package - pyriskmgmt - Python
 
 > # For a detailed summary of the package, please consult the README.md file located within the pyriskmgmt directory
 
