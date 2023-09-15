@@ -1,0 +1,12 @@
+yfinance
+numpy
+pandas
+scipy
+rpy2
+requests
+QuantLib
+arch
+joblib
+bs4
+seaborn
+matplotlib
